@@ -8,6 +8,8 @@ import '../widgets/custom_error_widget.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Environment.bootstrap();
+
   bool _hasShownError = false;
 
   // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE
@@ -28,11 +30,8 @@ void main() async {
   };
 
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
-  Future.wait([
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-  ]).then((value) {
-    runApp(MyApp());
-  });
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
