@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:in_app_review/in_app_review.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
@@ -20,6 +22,9 @@ class MainMenu extends StatefulWidget {
 class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+
+  final MonetizationManager _monetizationManager =
+      MonetizationManager.instance;
 
   // Mock data for the main menu
   final Map<String, dynamic> playerData = {
@@ -46,12 +51,34 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
     _fadeController.forward();
+
+    playerData["coinsEarned"] = _monetizationManager.coinBalance.value;
+    playerData["hasRemoveAdsPurchase"] = _monetizationManager.isAdFree;
+
+    _monetizationManager.coinBalance.addListener(_onCoinBalanceChanged);
+    _monetizationManager.addListener(_onMonetizationChanged);
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
+    _monetizationManager.coinBalance.removeListener(_onCoinBalanceChanged);
+    _monetizationManager.removeListener(_onMonetizationChanged);
     super.dispose();
+  }
+
+  void _onCoinBalanceChanged() {
+    if (!mounted) return;
+    setState(() {
+      playerData["coinsEarned"] = _monetizationManager.coinBalance.value;
+    });
+  }
+
+  void _onMonetizationChanged() {
+    if (!mounted) return;
+    setState(() {
+      playerData["hasRemoveAdsPurchase"] = _monetizationManager.isAdFree;
+    });
   }
 
   void _navigateToGameplay() {
@@ -80,27 +107,68 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   }
 
   void _shareProgress() {
-    // Share progress functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            'Level ${playerData["currentLevel"]} completed! \${playerData["coinsEarned"]} coins earned!'),
-      ),
+    final currentLevel = playerData["currentLevel"] as int;
+    final coins = _monetizationManager.coinBalance.value;
+    final shareUri = Uri.https('sortbliss.app.link', '/progress', {
+      'level': '$currentLevel',
+      'coins': '$coins',
+      'utm_source': 'app',
+      'utm_medium': 'share',
+      'utm_campaign': 'progress_share',
+    });
+
+    AnalyticsLogger.logEvent('share_progress_initiated',
+        parameters: {'level': currentLevel, 'coins': coins});
+
+    Share.share(
+      'I just completed level $currentLevel in SortBliss with $coins coins! Join me: $shareUri',
+      subject: 'SortBliss progress',
     );
   }
 
   void _rateApp() {
-    // Rate app functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thank you for rating SortBliss!')),
-    );
+    final inAppReview = InAppReview.instance;
+    AnalyticsLogger.logEvent('rate_prompt_requested');
+
+    inAppReview.isAvailable().then((available) async {
+      if (!mounted) return;
+      if (available) {
+        await inAppReview.requestReview();
+        AnalyticsLogger.logEvent('rate_prompt_shown');
+      } else {
+        await inAppReview.openStoreListing();
+        AnalyticsLogger.logEvent('rate_store_listing_opened');
+      }
+    }).catchError((error) {
+      AnalyticsLogger.logEvent('rate_prompt_error',
+          parameters: {'error': '$error'});
+    });
   }
 
   void _purchaseRemoveAds() {
-    // Remove ads purchase
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Remove Ads for \$2.99 - Coming soon!')),
-    );
+    if (_monetizationManager.isAdFree) {
+      AnalyticsLogger.logEvent('remove_ads_already_owned');
+      return;
+    }
+
+    AnalyticsLogger.logEvent('remove_ads_cta_tapped');
+    _monetizationManager.buyProduct(MonetizationProducts.removeAds);
+  }
+
+  void _purchaseProduct(String productId) {
+    if (productId == MonetizationProducts.sortPass &&
+        _monetizationManager.hasSortPass) {
+      AnalyticsLogger.logEvent('sort_pass_already_owned');
+      return;
+    }
+    AnalyticsLogger.logEvent('storefront_product_tapped',
+        parameters: {'productId': productId});
+    _monetizationManager.buyProduct(productId);
+  }
+
+  String _priceForProduct(String productId, String fallback) {
+    final details = _monetizationManager.productForId(productId);
+    return details?.price ?? fallback;
   }
 
   Widget _buildPullDownMenu() {
@@ -132,14 +200,91 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
             ),
           ),
           SizedBox(height: 2.h),
-          if (!(playerData["hasRemoveAdsPurchase"] as bool))
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Storefront',
+              style: AppTheme.lightTheme.textTheme.titleMedium,
+            ),
+          ),
+          SizedBox(height: 1.5.h),
+          if (!(playerData["hasRemoveAdsPurchase"] as bool)) ...[
             MenuActionButtonWidget(
               iconName: 'block',
               title: 'Remove Ads',
-              subtitle: 'One-time purchase - \$2.99',
+              subtitle:
+                  'One-time purchase - ${_priceForProduct(MonetizationProducts.removeAds, '\$2.99')}',
               onPressed: _purchaseRemoveAds,
               iconColor: Colors.red,
             ),
+            SizedBox(height: 1.5.h),
+          ] else ...[
+            Container(
+              width: 90.w,
+              padding: EdgeInsets.all(3.w),
+              decoration: BoxDecoration(
+                color: AppTheme.lightTheme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  CustomIconWidget(
+                    iconName: 'check_circle',
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    size: 6.w,
+                  ),
+                  SizedBox(width: 3.w),
+                  Expanded(
+                    child: Text(
+                      'Ads removed — thank you for supporting SortBliss!',
+                      style: AppTheme.lightTheme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 1.5.h),
+          ],
+          MenuActionButtonWidget(
+            iconName: 'paid',
+            title: 'Pocketful of Coins',
+            subtitle:
+                '250 coins - ${_priceForProduct(MonetizationProducts.coinPackSmall, '\$1.99')}',
+            onPressed: () =>
+                _purchaseProduct(MonetizationProducts.coinPackSmall),
+            iconColor: Colors.amber,
+          ),
+          SizedBox(height: 1.5.h),
+          MenuActionButtonWidget(
+            iconName: 'savings',
+            title: 'Treasure Trove',
+            subtitle:
+                '750 coins - ${_priceForProduct(MonetizationProducts.coinPackLarge, '\$4.99')}',
+            onPressed: () =>
+                _purchaseProduct(MonetizationProducts.coinPackLarge),
+            iconColor: Colors.deepOrange,
+          ),
+          SizedBox(height: 1.5.h),
+          MenuActionButtonWidget(
+            iconName: 'diamond',
+            title: 'Epic Hoard',
+            subtitle:
+                '2,000 coins - ${_priceForProduct(MonetizationProducts.coinPackEpic, '\$9.99')}',
+            onPressed: () =>
+                _purchaseProduct(MonetizationProducts.coinPackEpic),
+            iconColor: Colors.purple,
+          ),
+          SizedBox(height: 1.5.h),
+          MenuActionButtonWidget(
+            iconName: 'workspace_premium',
+            title: 'Sort Pass Premium',
+            subtitle:
+                'Unlock exclusive levels - ${_priceForProduct(MonetizationProducts.sortPass, '\$14.99')}',
+            onPressed: () =>
+                _purchaseProduct(MonetizationProducts.sortPass),
+            iconColor: Colors.teal,
+            showBadge: !_monetizationManager.hasSortPass,
+          ),
           SizedBox(height: 2.h),
           MenuActionButtonWidget(
             iconName: 'share',

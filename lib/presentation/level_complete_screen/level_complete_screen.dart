@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
@@ -22,6 +23,9 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
   late Animation<double> _backgroundAnimation;
   late AnimationController _autoAdvanceController;
   late Animation<double> _autoAdvanceAnimation;
+
+  final MonetizationManager _monetizationManager =
+      MonetizationManager.instance;
 
   bool _showConfetti = false;
   bool _showScoreBreakdown = false;
@@ -51,6 +55,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     _initializeAnimations();
     _startCelebrationSequence();
     _triggerHapticFeedback();
+    _monetizationManager.addListener(_handleMonetizationChanged);
   }
 
   void _initializeAnimations() {
@@ -141,14 +146,18 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     _autoAdvanceController.stop();
   }
 
-  void _navigateToNextLevel() {
+  Future<void> _navigateToNextLevel() async {
     HapticFeedback.selectionClick();
+    await AdManager.instance.showInterstitialIfEligible();
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/gameplay-screen');
   }
 
-  void _replayLevel() {
+  Future<void> _replayLevel() async {
     HapticFeedback.selectionClick();
     _stopAutoAdvanceTimer();
+    await AdManager.instance.showInterstitialIfEligible();
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/gameplay-screen');
   }
 
@@ -156,16 +165,22 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     HapticFeedback.selectionClick();
     _stopAutoAdvanceTimer();
 
-    // Mock share functionality
-    final shareText =
-        'Just completed Level ${levelData["levelNumber"]} in SortBliss with ${levelData["totalScore"]} points! 🌟';
+    final levelNumber = levelData["levelNumber"] as int;
+    final totalScore = levelData["totalScore"] as int;
+    final shareUri = Uri.https('sortbliss.app.link', '/score', {
+      'level': '$levelNumber',
+      'score': '$totalScore',
+      'utm_source': 'app',
+      'utm_medium': 'share',
+      'utm_campaign': 'score_share',
+    });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Score shared: $shareText'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
+    AnalyticsLogger.logEvent('share_score_initiated',
+        parameters: {'level': levelNumber, 'score': totalScore});
+
+    Share.share(
+      'I just completed Level $levelNumber in SortBliss with $totalScore points! 🌟 Play now: $shareUri',
+      subject: 'SortBliss high score',
     );
   }
 
@@ -173,13 +188,23 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     HapticFeedback.selectionClick();
     _stopAutoAdvanceTimer();
 
-    // Mock ad watching functionality
+    AnalyticsLogger.logEvent('rewarded_cta_pressed',
+        parameters: {'level': levelData["levelNumber"]});
+
+    var dialogClosed = false;
+    void closeDialogIfNeeded() {
+      if (!dialogClosed && mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        dialogClosed = true;
+      }
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text(
-          'Watching Ad...',
+          'Preparing reward...',
           style: AppTheme.lightTheme.textTheme.titleLarge,
         ),
         content: Column(
@@ -197,21 +222,41 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
           ],
         ),
       ),
-    );
+    ).then((_) {
+      dialogClosed = true;
+    });
 
-    // Simulate ad completion
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pop();
+    AdManager.instance.showRewardedAd(
+      onRewardEarned: () {
+        final bonus = (levelData["coinsEarned"] as int) * 2;
+        MonetizationManager.instance.addCoins(bonus);
+        AnalyticsLogger.logEvent('rewarded_reward_granted',
+            parameters: {'coins': bonus});
+        closeDialogIfNeeded();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Earned ${levelData["coinsEarned"] * 2} coins! 🪙'),
+            content: Text('Earned $bonus coins! 🪙'),
             backgroundColor: AppTheme.lightTheme.colorScheme.tertiary,
             duration: const Duration(seconds: 2),
           ),
         );
-      }
-    });
+      },
+      onAdUnavailable: () {
+        AnalyticsLogger.logEvent('rewarded_unavailable');
+        closeDialogIfNeeded();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Ad not ready yet. Try again soon.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      onAdClosed: () {
+        closeDialogIfNeeded();
+      },
+    );
   }
 
   void _navigateToMainMenu() {
@@ -227,7 +272,14 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
   void dispose() {
     _backgroundController.dispose();
     _autoAdvanceController.dispose();
+    _monetizationManager.removeListener(_handleMonetizationChanged);
     super.dispose();
+  }
+
+  void _handleMonetizationChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Widget _buildLevelInfo() {
@@ -474,11 +526,13 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                         // Action buttons
                         if (_showActionButtons)
                           ActionButtonsWidget(
-                            onNextLevel: _navigateToNextLevel,
-                            onReplayLevel: _replayLevel,
+                            onNextLevel: () => _navigateToNextLevel(),
+                            onReplayLevel: () => _replayLevel(),
                             onShareScore: _shareScore,
-                            onWatchAd: _watchAdForCoins,
-                            showAdButton: true,
+                            onWatchAd: _monetizationManager.isAdFree
+                                ? null
+                                : _watchAdForCoins,
+                            showAdButton: !_monetizationManager.isAdFree,
                           ),
                       ],
                     ),
