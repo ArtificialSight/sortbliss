@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Centralised access to environment configuration.
-///
 /// Values are resolved in the following order:
 /// 1. `--dart-define` build time variables.
 /// 2. `.env` file managed by `flutter_dotenv` for local development.
@@ -25,12 +24,15 @@ class Environment {
       if (kDebugMode) {
         // In debug builds surface the missing file so developers know to
         // provision secrets locally without crashing the runtime.
-        // ignore: avoid_print
-        print('dotenv bootstrap skipped: $error');
+        debugPrint('Environment bootstrap failed: $error');
       }
+      // Production builds continue silently as secrets should be provided
+      // through secure channels like --dart-define or CI/CD pipelines.
     }
   }
 
+  /// Retrieves a configuration value by key with optional fallback.
+  /// Follows the documented precedence order for secure key management.
   static String _read(String key, {String? fallback}) {
     final fromDefine = const String.fromEnvironment(key);
     if (fromDefine.isNotEmpty) {
@@ -54,4 +56,7 @@ class Environment {
   static String get geminiSessionToken => _read('GEMINI_SESSION_TOKEN');
   static String get anthropicSessionToken => _read('ANTHROPIC_SESSION_TOKEN');
   static String get perplexitySessionToken => _read('PERPLEXITY_SESSION_TOKEN');
+  
+  static String get openAiBaseUrl =>
+      _read('OPENAI_BASE_URL', fallback: 'https://api.openai.com/v1');
 }

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../core/services/daily_challenge_service.dart';
 import '../../theme/app_theme.dart';
+import '../daily_challenge/daily_challenge_screen.dart';
 import './widgets/animated_background_widget.dart';
 import './widgets/daily_challenge_widget.dart';
 import './widgets/level_progress_widget.dart';
@@ -20,6 +24,12 @@ class MainMenu extends StatefulWidget {
 class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  late final DailyChallengeService _dailyChallengeService;
+  DailyChallengePayload? _dailyChallenge;
+  Duration? _dailyChallengeTimeRemaining;
+  bool _loadingDailyChallenge = true;
+  StreamSubscription<DailyChallengePayload>? _challengeSubscription;
+  StreamSubscription<Duration>? _countdownSubscription;
 
   // Mock data for the main menu
   final Map<String, dynamic> playerData = {
@@ -46,12 +56,91 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
     _fadeController.forward();
+
+    _dailyChallengeService = DailyChallengeService(
+      supabaseRestEndpoint: _envOrNull(
+        const String.fromEnvironment(
+          'SUPABASE_DAILY_CHALLENGE_ENDPOINT',
+          defaultValue: '',
+        ),
+      ),
+      supabaseAnonKey: _envOrNull(
+        const String.fromEnvironment(
+          'SUPABASE_ANON_KEY',
+          defaultValue: '',
+        ),
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDailyChallenge();
+    });
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
+    _challengeSubscription?.cancel();
+    _countdownSubscription?.cancel();
+    unawaited(_dailyChallengeService.dispose());
     super.dispose();
+  }
+
+  Future<void> _loadDailyChallenge({bool forceRefresh = false}) async {
+    setState(() {
+      _loadingDailyChallenge = true;
+    });
+    try {
+      _challengeSubscription ??=
+          _dailyChallengeService.challengeStream.listen((payload) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _dailyChallenge = payload;
+          _dailyChallengeTimeRemaining = payload.timeUntilReset;
+        });
+        _countdownSubscription?.cancel();
+        _countdownSubscription = _dailyChallengeService
+            .countdownStream(payload.resetAt)
+            .listen((duration) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _dailyChallengeTimeRemaining = duration;
+          });
+        });
+      });
+
+      final challenge =
+          await _dailyChallengeService.loadDailyChallenge(forceRefresh: forceRefresh);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _dailyChallenge = challenge;
+        _dailyChallengeTimeRemaining = challenge.timeUntilReset;
+      });
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to sync daily challenge: $error')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingDailyChallenge = false;
+        });
+      }
+    }
+  }
+
+  String? _envOrNull(String value) {
+    if (value.isEmpty) {
+      return null;
+    }
+    return value;
   }
 
   void _navigateToGameplay() {
@@ -59,9 +148,23 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   }
 
   void _navigateToDailyChallenge() {
-    // Navigate to daily challenge screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Daily Challenge coming soon!')),
+    if (_dailyChallenge == null || _loadingDailyChallenge) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Daily challenge is syncing. Please try again in a moment.'),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pushNamed(
+      context,
+      AppRoutes.dailyChallenge,
+      arguments: DailyChallengeScreenArgs(
+        service: _dailyChallengeService,
+        initialChallenge: _dailyChallenge!,
+      ),
     );
   }
 
@@ -172,11 +275,10 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
               opacity: _fadeAnimation,
               child: RefreshIndicator(
                 onRefresh: () async {
-                  // Refresh daily challenges and leaderboard data
-                  await Future.delayed(const Duration(seconds: 1));
+                  await _loadDailyChallenge(forceRefresh: true);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Data refreshed!')),
+                      const SnackBar(content: Text('Daily challenge updated!')),
                     );
                   }
                 },
@@ -231,10 +333,12 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
 
                       // Daily Challenge
                       DailyChallengeWidget(
-                        timeRemaining: playerData["timeUntilReset"] as String,
-                        isCompleted:
-                            playerData["dailyChallengeCompleted"] as bool,
-                        onPressed: _navigateToDailyChallenge,
+                        challenge: _dailyChallenge,
+                        timeRemaining: _dailyChallengeTimeRemaining,
+                        isLoading: _loadingDailyChallenge,
+                        onPressed: _dailyChallenge != null
+                            ? _navigateToDailyChallenge
+                            : null,
                       ),
                       SizedBox(height: 3.h),
 

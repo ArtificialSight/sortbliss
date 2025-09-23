@@ -4,7 +4,7 @@ import '../config/environment.dart';
 
 class TokenExchangeException implements Exception {
   const TokenExchangeException(this.message);
-
+  
   final String message;
 
   @override
