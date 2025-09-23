@@ -2,7 +2,48 @@
 
 A modern Flutter-based mobile application utilizing the latest mobile development technologies and tools for building responsive cross-platform applications.
 
-## 📋 Prerequisites
+## � Secure configuration & secret handling
+
+This project keeps provider API keys (OpenAI, Gemini, Anthropic, Perplexity, etc.) off the client. Only short‑lived, narrowly scoped tokens reach the app. Runtime configuration resolves in this order:
+
+1. `--dart-define` values passed at build or launch time.
+2. `.env` file (local development only, ignored by Git).
+3. Fallback empty string (feature gracefully disabled until configured).
+
+Environment access is centralized in `lib/core/config/environment.dart`.
+
+### Local development
+
+```bash
+cp .env.example .env
+# edit .env with non-sensitive values
+flutter run
+```
+
+Leave provider session tokens blank; they should be fetched at runtime from a Supabase Edge Function using a valid Supabase session.
+
+### Production / CI builds
+
+Inject configuration without committing secrets:
+
+```bash
+flutter build apk --release \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_FUNCTIONS_URL=https://your-project.functions.supabase.co
+```
+
+Session + provider tokens are exchanged dynamically; do not embed long‑lived keys.
+
+### Token exchange flow
+
+1. App holds (or authenticates to obtain) a Supabase session token.
+2. Calls a Supabase Edge Function (e.g. `issue-openai-token`).
+3. Edge Function validates session; mints short‑lived provider token.
+4. `AuthenticatedHttpClient` includes that token in outbound provider requests.
+
+Edge functions never return raw provider secret keys—only ephemeral tokens.
+
+## �📋 Prerequisites
 
 - Flutter SDK (^3.29.2)
 - Dart SDK
