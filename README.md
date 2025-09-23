@@ -118,7 +118,31 @@ Environment variables (set in Supabase dashboard):
 Request flow:
 Client → `openai-chat` (Authorization: Bearer Supabase session) → OpenAI → Response → Client
 
-Legacy mock `issue-openai-token` function is retained only for demonstration and should be removed in production.
+Legacy mock token function removed. Secure proxy (`openai-chat`) is the default.
+
+### Debug & Observability
+Enable verbose AI logs:
+```bash
+flutter run --dart-define=AI_DEBUG=1
+```
+Logs are tagged with `AI` (use `devtools` logging view).
+
+### Streaming (Planned)
+`OpenAiProxyStreamService` scaffolds streaming; edge function must forward SSE
+events. Update the edge function to send `stream: true` to OpenAI and pipe
+chunks as they arrive.
+
+### Composite Provider Fallback
+Use `CompositeAIProvider` to chain providers:
+```dart
+final composite = CompositeAIProvider([
+  OpenAiProxyService(),
+  // AnthropicProxyService(), // future
+]);
+final reply = await composite.createChatCompletion(
+  messages: const [AIMessage(role: 'user', content: 'Fallback test')],
+);
+```
 
 ### Testing
 Example test in `test/openai_service_test.dart` uses a fake Dio client to

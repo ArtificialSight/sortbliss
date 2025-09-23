@@ -4,6 +4,7 @@ import '../config/environment.dart';
 import 'ai/ai_errors.dart';
 import 'ai/ai_provider.dart';
 import 'ai/retry_policy.dart';
+import 'ai/ai_debug.dart';
 
 /// Uses the Supabase Edge Function `openai-chat` to proxy requests. The
 /// edge function holds the real OpenAI API key, keeping it off-device.
@@ -42,6 +43,7 @@ class OpenAiProxyService implements AIProvider {
 
     return _retryPolicy.execute(() async {
       try {
+        aiDebug('[proxy] POST edgeFunction=$edgeFunction model=${model ?? defaultModel} messages=${messages.length}');
         final resp = await _http.post<Map<String, dynamic>>(
           '$functionsUrl/functions/v1/$edgeFunction',
           data: {
@@ -53,6 +55,7 @@ class OpenAiProxyService implements AIProvider {
             'Authorization': 'Bearer $sessionToken',
           }),
         );
+        aiDebug('[proxy] status=${resp.statusCode} keys=${resp.data?.keys.toList()}');
         final data = resp.data?['data'] as Map<String, dynamic>?;
         if (data == null) {
           throw AIResponseParsingError('Missing data envelope');
