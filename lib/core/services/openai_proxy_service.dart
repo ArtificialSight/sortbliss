@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-
 import '../config/environment.dart';
 import 'ai/ai_errors.dart';
 import 'ai/ai_provider.dart';
@@ -44,6 +43,7 @@ class OpenAiProxyService implements AIProvider {
     return _retryPolicy.execute(() async {
       try {
         aiDebug('[proxy] POST edgeFunction=$edgeFunction model=${model ?? defaultModel} messages=${messages.length}');
+        
         final resp = await _http.post<Map<String, dynamic>>(
           '$functionsUrl/functions/v1/$edgeFunction',
           data: {
@@ -55,22 +55,27 @@ class OpenAiProxyService implements AIProvider {
             'Authorization': 'Bearer $sessionToken',
           }),
         );
+
         aiDebug('[proxy] status=${resp.statusCode} keys=${resp.data?.keys.toList()}');
+        
         final data = resp.data?['data'] as Map<String, dynamic>?;
         if (data == null) {
           throw AIResponseParsingError('Missing data envelope');
         }
+
         final choices = data['choices'] as List<dynamic>?;
         if (choices == null || choices.isEmpty) {
           throw AIResponseParsingError('No choices array');
         }
+
         final first = choices.first as Map<String, dynamic>?;
         final content = (first?['message'] as Map<String, dynamic>?)?['content'];
         if (content is! String || content.isEmpty) {
           throw AIResponseParsingError('Empty content');
         }
+
         return content;
-      } on DioError catch (e) {
+      } on DioException catch (e) {
         final status = e.response?.statusCode;
         if (status == 401 || status == 403) {
           throw AIUnauthorizedError('Unauthorized', cause: e);
@@ -78,8 +83,8 @@ class OpenAiProxyService implements AIProvider {
           throw AIRateLimitError('Rate limited', cause: e);
         } else if (status != null && status >= 500) {
           throw AIServerError('Server error ($status)', statusCode: status, cause: e);
-        } else if (e.type == DioErrorType.connectionTimeout ||
-            e.type == DioErrorType.receiveTimeout) {
+        } else if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
           throw AINetworkError('Timeout', cause: e);
         }
         throw AINetworkError('Network error: ${e.message}', cause: e);
