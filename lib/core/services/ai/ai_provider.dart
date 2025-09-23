@@ -23,9 +23,7 @@ abstract class AIProvider {
 /// Manages multiple providers, enabling fallback or targeted execution.
 class AIProviderRegistry {
   final Map<String, AIProvider> _providers = {};
-
   void register(AIProvider provider) => _providers[provider.name] = provider;
-
   AIProvider provider(String name) {
     final p = _providers[name];
     if (p == null) {
