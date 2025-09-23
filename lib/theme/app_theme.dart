@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   AppTheme._();
+
   // Light colors
   static const primaryLight = Color(0xFF6366F1);
   static const primaryVariantLight = Color(0xFF4F46E5);
@@ -57,7 +58,7 @@ class AppTheme {
       onSecondaryContainer: onSecondaryLight,
       tertiary: successLight,
       onTertiary: onPrimaryLight,
-      tertiaryContainer: successLight.withOpacity(0.1),
+      tertiaryContainer: successLight.withValues(alpha: 0.1),
       onTertiaryContainer: successLight,
       error: errorLight,
       onError: onErrorLight,
@@ -65,7 +66,7 @@ class AppTheme {
       onSurface: onSurfaceLight,
       onSurfaceVariant: textSecondaryLight,
       outline: dividerLight,
-      outlineVariant: dividerLight.withOpacity(0.5),
+      outlineVariant: dividerLight.withValues(alpha: 0.5),
       shadow: shadowLight,
       scrim: shadowLight,
       inverseSurface: surfaceDark,
@@ -73,7 +74,7 @@ class AppTheme {
       inversePrimary: primaryDark,
     ),
     scaffoldBackgroundColor: backgroundLight,
-    cardTheme: const CardTheme(
+    cardTheme: const CardThemeData(
       color: surfaceLight,
       elevation: 2,
       shadowColor: shadowLight,
@@ -114,7 +115,7 @@ class AppTheme {
       onSecondaryContainer: onSecondaryDark,
       tertiary: successDark,
       onTertiary: onPrimaryDark,
-      tertiaryContainer: successDark.withOpacity(0.2),
+      tertiaryContainer: successDark.withValues(alpha: 0.2),
       onTertiaryContainer: successDark,
       error: errorDark,
       onError: onErrorDark,
@@ -122,7 +123,7 @@ class AppTheme {
       onSurface: onSurfaceDark,
       onSurfaceVariant: textSecondaryDark,
       outline: dividerDark,
-      outlineVariant: dividerDark.withOpacity(0.5),
+      outlineVariant: dividerDark.withValues(alpha: 0.5),
       shadow: shadowDark,
       scrim: shadowDark,
       inverseSurface: surfaceLight,
@@ -130,7 +131,7 @@ class AppTheme {
       inversePrimary: primaryLight,
     ),
     scaffoldBackgroundColor: backgroundDark,
-    cardTheme: const CardTheme(
+    cardTheme: const CardThemeData(
       color: surfaceDark,
       elevation: 2,
       shadowColor: shadowDark,
@@ -161,6 +162,7 @@ class AppTheme {
     final base = GoogleFonts.interTextTheme();
     final primary = isLight ? onSurfaceLight : onSurfaceDark;
     final secondary = isLight ? textSecondaryLight : textSecondaryDark;
+
     return base.copyWith(
       displayLarge: base.displayLarge?.copyWith(color: primary, fontWeight: FontWeight.w700),
       displayMedium: base.displayMedium?.copyWith(color: primary, fontWeight: FontWeight.w700),
