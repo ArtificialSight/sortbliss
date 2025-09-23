@@ -127,10 +127,20 @@ flutter run --dart-define=AI_DEBUG=1
 ```
 Logs are tagged with `AI` (use `devtools` logging view).
 
-### Streaming (Planned)
-`OpenAiProxyStreamService` scaffolds streaming; edge function must forward SSE
-events. Update the edge function to send `stream: true` to OpenAI and pipe
-chunks as they arrive.
+### Streaming
+`OpenAiProxyStreamService` consumes Server-Sent Events (SSE) when `stream: true`.
+Edge function now forwards OpenAI streaming chunks:
+```dart
+final streamService = OpenAiProxyStreamService();
+final buffer = StringBuffer();
+await for (final token in streamService.streamChatCompletion(
+  messages: const [AIMessage(role: 'user', content: 'Explain streams briefly')],
+)) {
+  buffer.write(token);
+}
+print(buffer.toString());
+```
+Handle partial tokens incrementally for responsive UI (e.g. animated typing effect).
 
 ### Composite Provider Fallback
 Use `CompositeAIProvider` to chain providers:
@@ -162,6 +172,11 @@ Artifacts: `coverage/lcov.info` uploaded for inspection.
 ### Environment Variables Recap
 `OPENAI_BASE_URL` optional override (defaults to `https://api.openai.com/v1`).
 Ephemeral tokens returned by edge functions — never store static API keys locally.
+
+### Moderation
+The edge function performs a moderation pre-check (model `omni-moderation-latest`) on the last user message.
+If flagged, it returns HTTP 400 with `{ "error": "Content flagged by moderation" }`.
+Client code should catch this and present a polite warning. Local placeholder `OpenAiModerationService` is included for future client-side heuristics or offline simulation.
 
 ## �📋 Prerequisites
 

@@ -31,36 +31,49 @@ class OpenAiProxyStreamService {
 
     aiDebug('[proxy-stream] start messages=${messages.length}');
 
-    // NOTE: This is a placeholder design. The current edge function returns
-    // non-streamed JSON. To enable real streaming, update edge function to
-    // set `stream: true` in OpenAI request and forward Server-Sent Events.
-    final resp = await _http.post<Map<String, dynamic>>(
+    final response = await _http.post<String>(
       '$functionsUrl/functions/v1/$edgeFunction',
-      data: {
+      data: jsonEncode({
         'messages': messages.map((m) => m.toJson()).toList(),
         'model': model,
         'temperature': temperature,
-        // 'stream': true, // to be handled server side
-      },
-      options: Options(headers: {
-        'Authorization': 'Bearer $sessionToken',
+        'stream': true,
       }),
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: {
+          'Authorization': 'Bearer $sessionToken',
+          'Content-Type': 'application/json',
+        },
+      ),
     );
 
-    final data = resp.data?['data'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw AIResponseParsingError('Missing data envelope');
+    final stream = response.data;
+    if (stream is! Stream<List<int>>) {
+      throw AIResponseParsingError('Expected byte stream');
     }
-    final choices = data['choices'] as List<dynamic>?;
-    if (choices == null || choices.isEmpty) {
-      throw AIResponseParsingError('No choices');
+
+    await for (final chunk in stream) {
+      final text = utf8.decode(chunk);
+      for (final line in const LineSplitter().convert(text)) {
+        if (line.startsWith('data:')) {
+          final payload = line.substring(5).trim();
+          if (payload == '[DONE]') return;
+          if (payload.isEmpty) continue;
+          try {
+            final jsonData = jsonDecode(payload) as Map<String, dynamic>;
+            final choices = jsonData['choices'] as List<dynamic>?;
+            if (choices == null || choices.isEmpty) continue;
+            final delta = (choices.first as Map<String, dynamic>)['delta'] as Map<String, dynamic>?;
+            final token = delta?['content'] as String?;
+            if (token != null && token.isNotEmpty) {
+              yield token;
+            }
+          } catch (_) {
+            // Swallow malformed chunk
+          }
+        }
+      }
     }
-    final content =
-        (choices.first['message'] as Map<String, dynamic>)['content'] as String?;
-    if (content == null) {
-      throw AIResponseParsingError('Missing content');
-    }
-    // For now emit the full content once.
-    yield content;
   }
 }
