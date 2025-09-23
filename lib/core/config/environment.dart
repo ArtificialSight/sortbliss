@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 /// Centralised access to environment configuration.
 ///
 /// Resolution order:
@@ -23,10 +22,14 @@ class Environment {
   }
 
   static String _read(String key, {String? fallback}) {
-    final fromDefine = const String.fromEnvironment(key);
+    // Note: const String.fromEnvironment requires a literal key at compile time.
+    // For dynamic keys, use String.fromEnvironment without const.
+    final fromDefine = String.fromEnvironment(key);
     if (fromDefine.isNotEmpty) return fromDefine;
+
     final fromEnv = dotenv.env[key];
     if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv;
+
     return fallback ?? '';
   }
 
@@ -34,7 +37,6 @@ class Environment {
   static String get supabaseFunctionsUrl =>
       _read('SUPABASE_FUNCTIONS_URL', fallback: supabaseUrl);
   static String get supabaseSessionToken => _read('SUPABASE_SESSION_TOKEN');
-
   static String get openAiSessionToken => _read('OPENAI_SESSION_TOKEN');
   static String get geminiSessionToken => _read('GEMINI_SESSION_TOKEN');
   static String get anthropicSessionToken => _read('ANTHROPIC_SESSION_TOKEN');
