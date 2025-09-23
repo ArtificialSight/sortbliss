@@ -6,3 +6,6 @@ export '../theme/app_theme.dart';
 export 'analytics/analytics_logger.dart';
 export 'monetization/monetization_manager.dart';
 export 'monetization/ad_manager.dart';
+export 'config/environment.dart';
+export 'services/openai_service.dart';
+export 'services/openai_proxy_service.dart';

@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
+import '../../core/services/daily_challenge_service.dart';
 import '../../theme/app_theme.dart';
+import '../daily_challenge/daily_challenge_screen.dart';
 import './widgets/animated_background_widget.dart';
 import './widgets/daily_challenge_widget.dart';
 import './widgets/level_progress_widget.dart';
@@ -22,6 +26,12 @@ class MainMenu extends StatefulWidget {
 class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  late final DailyChallengeService _dailyChallengeService;
+  DailyChallengePayload? _dailyChallenge;
+  Duration? _dailyChallengeTimeRemaining;
+  bool _loadingDailyChallenge = true;
+  StreamSubscription<DailyChallengePayload>? _challengeSubscription;
+  StreamSubscription<Duration>? _countdownSubscription;
 
   final MonetizationManager _monetizationManager =
       MonetizationManager.instance;
@@ -52,336 +62,277 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
     );
     _fadeController.forward();
 
+    // Initialize monetization data
     playerData["coinsEarned"] = _monetizationManager.coinBalance.value;
     playerData["hasRemoveAdsPurchase"] = _monetizationManager.isAdFree;
 
     _monetizationManager.coinBalance.addListener(_onCoinBalanceChanged);
     _monetizationManager.addListener(_onMonetizationChanged);
+
+    // Initialize daily challenge service
+    _dailyChallengeService = DailyChallengeService(
+      supabaseRestEndpoint: _envOrNull(
+        const String.fromEnvironment(
+          'SUPABASE_DAILY_CHALLENGE_ENDPOINT',
+          defaultValue: '',
+        ),
+      ),
+      supabaseAnonKey: _envOrNull(
+        const String.fromEnvironment(
+          'SUPABASE_DAILY_CHALLENGE_ANON_KEY',
+          defaultValue: '',
+        ),
+      ),
+    );
+
+    _initializeDailyChallenge();
+  }
+
+  String? _envOrNull(String value) {
+    return value.isEmpty ? null : value;
+  }
+
+  void _onCoinBalanceChanged() {
+    if (mounted) {
+      setState(() {
+        playerData["coinsEarned"] = _monetizationManager.coinBalance.value;
+      });
+    }
+  }
+
+  void _onMonetizationChanged() {
+    if (mounted) {
+      setState(() {
+        playerData["hasRemoveAdsPurchase"] = _monetizationManager.isAdFree;
+      });
+    }
+  }
+
+  Future<void> _initializeDailyChallenge() async {
+    try {
+      final payload = await _dailyChallengeService.initializeDailyChallenge();
+      if (payload != null && mounted) {
+        setState(() {
+          _dailyChallenge = payload;
+          _loadingDailyChallenge = false;
+        });
+
+        // Start listening to countdown updates
+        _countdownSubscription = _dailyChallengeService
+            .getDailyChallengeCountdown()
+            .listen((duration) {
+          if (mounted) {
+            setState(() {
+              _dailyChallengeTimeRemaining = duration;
+            });
+          }
+        });
+      } else if (mounted) {
+        setState(() {
+          _loadingDailyChallenge = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingDailyChallenge = false;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
+    _challengeSubscription?.cancel();
+    _countdownSubscription?.cancel();
     _monetizationManager.coinBalance.removeListener(_onCoinBalanceChanged);
     _monetizationManager.removeListener(_onMonetizationChanged);
     super.dispose();
   }
 
-  void _onCoinBalanceChanged() {
-    if (!mounted) return;
-    setState(() {
-      playerData["coinsEarned"] = _monetizationManager.coinBalance.value;
-    });
+  void _navigateToGame() {
+    Navigator.of(context).pushNamed('/game');
   }
 
-  void _onMonetizationChanged() {
-    if (!mounted) return;
-    setState(() {
-      playerData["hasRemoveAdsPurchase"] = _monetizationManager.isAdFree;
-    });
-  }
-
-  void _navigateToGameplay() {
-    Navigator.pushNamed(context, '/gameplay-screen');
-  }
-
-  void _navigateToDailyChallenge() {
-    // Navigate to daily challenge screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Daily Challenge coming soon!')),
-    );
+  void _navigateToLeaderboard() {
+    Navigator.of(context).pushNamed('/leaderboard');
   }
 
   void _navigateToAchievements() {
-    // Navigate to achievements screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Achievements screen coming soon!')),
-    );
+    Navigator.of(context).pushNamed('/achievements');
   }
 
   void _navigateToSettings() {
-    // Navigate to settings screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings screen coming soon!')),
-    );
+    Navigator.of(context).pushNamed('/settings');
   }
 
-  void _shareProgress() {
-    final currentLevel = playerData["currentLevel"] as int;
-    final coins = _monetizationManager.coinBalance.value;
-    final shareUri = Uri.https('sortbliss.app.link', '/progress', {
-      'level': '$currentLevel',
-      'coins': '$coins',
-      'utm_source': 'app',
-      'utm_medium': 'share',
-      'utm_campaign': 'progress_share',
-    });
-
-    AnalyticsLogger.logEvent('share_progress_initiated',
-        parameters: {'level': currentLevel, 'coins': coins});
-
-    Share.share(
-      'I just completed level $currentLevel in SortBliss with $coins coins! Join me: $shareUri',
-      subject: 'SortBliss progress',
-    );
-  }
-
-  void _rateApp() {
-    final inAppReview = InAppReview.instance;
-    AnalyticsLogger.logEvent('rate_prompt_requested');
-
-    inAppReview.isAvailable().then((available) async {
-      if (!mounted) return;
-      if (available) {
-        await inAppReview.requestReview();
-        AnalyticsLogger.logEvent('rate_prompt_shown');
-      } else {
-        await inAppReview.openStoreListing();
-        AnalyticsLogger.logEvent('rate_store_listing_opened');
-      }
-    }).catchError((error) {
-      AnalyticsLogger.logEvent('rate_prompt_error',
-          parameters: {'error': '$error'});
-    });
-  }
-
-  void _purchaseRemoveAds() {
-    if (_monetizationManager.isAdFree) {
-      AnalyticsLogger.logEvent('remove_ads_already_owned');
-      return;
-    }
-
-    AnalyticsLogger.logEvent('remove_ads_cta_tapped');
-    _monetizationManager.buyProduct(MonetizationProducts.removeAds);
-  }
-
-  void _purchaseProduct(String productId) {
-    if (productId == MonetizationProducts.sortPass &&
-        _monetizationManager.hasSortPass) {
-      AnalyticsLogger.logEvent('sort_pass_already_owned');
-      return;
-    }
-    AnalyticsLogger.logEvent('storefront_product_tapped',
-        parameters: {'productId': productId});
-    _monetizationManager.buyProduct(productId);
-  }
-
-  String _priceForProduct(String productId, String fallback) {
-    final details = _monetizationManager.productForId(productId);
-    return details?.price ?? fallback;
-  }
-
-  Widget _buildPullDownMenu() {
-    return Container(
-      width: 100.w,
-      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
+  void _navigateToDailyChallenge() {
+    if (_dailyChallenge != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => DailyChallengeScreen(
+            challengePayload: _dailyChallenge!,
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 10.w,
-            height: 0.5.h,
-            decoration: BoxDecoration(
-              color: AppTheme.lightTheme.colorScheme.outline,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          SizedBox(height: 2.h),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Storefront',
-              style: AppTheme.lightTheme.textTheme.titleMedium,
-            ),
-          ),
-          SizedBox(height: 1.5.h),
-          if (!(playerData["hasRemoveAdsPurchase"] as bool)) ...[
-            MenuActionButtonWidget(
-              iconName: 'block',
-              title: 'Remove Ads',
-              subtitle:
-                  'One-time purchase - ${_priceForProduct(MonetizationProducts.removeAds, '\$2.99')}',
-              onPressed: _purchaseRemoveAds,
-              iconColor: Colors.red,
-            ),
-            SizedBox(height: 1.5.h),
-          ] else ...[
-            Container(
-              width: 90.w,
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  CustomIconWidget(
-                    iconName: 'check_circle',
-                    color: AppTheme.lightTheme.colorScheme.primary,
-                    size: 6.w,
-                  ),
-                  SizedBox(width: 3.w),
-                  Expanded(
-                    child: Text(
-                      'Ads removed — thank you for supporting SortBliss!',
-                      style: AppTheme.lightTheme.textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 1.5.h),
-          ],
-          MenuActionButtonWidget(
-            iconName: 'paid',
-            title: 'Pocketful of Coins',
-            subtitle:
-                '250 coins - ${_priceForProduct(MonetizationProducts.coinPackSmall, '\$1.99')}',
-            onPressed: () =>
-                _purchaseProduct(MonetizationProducts.coinPackSmall),
-            iconColor: Colors.amber,
-          ),
-          SizedBox(height: 1.5.h),
-          MenuActionButtonWidget(
-            iconName: 'savings',
-            title: 'Treasure Trove',
-            subtitle:
-                '750 coins - ${_priceForProduct(MonetizationProducts.coinPackLarge, '\$4.99')}',
-            onPressed: () =>
-                _purchaseProduct(MonetizationProducts.coinPackLarge),
-            iconColor: Colors.deepOrange,
-          ),
-          SizedBox(height: 1.5.h),
-          MenuActionButtonWidget(
-            iconName: 'diamond',
-            title: 'Epic Hoard',
-            subtitle:
-                '2,000 coins - ${_priceForProduct(MonetizationProducts.coinPackEpic, '\$9.99')}',
-            onPressed: () =>
-                _purchaseProduct(MonetizationProducts.coinPackEpic),
-            iconColor: Colors.purple,
-          ),
-          SizedBox(height: 1.5.h),
-          MenuActionButtonWidget(
-            iconName: 'workspace_premium',
-            title: 'Sort Pass Premium',
-            subtitle:
-                'Unlock exclusive levels - ${_priceForProduct(MonetizationProducts.sortPass, '\$14.99')}',
-            onPressed: () =>
-                _purchaseProduct(MonetizationProducts.sortPass),
-            iconColor: Colors.teal,
-            showBadge: !_monetizationManager.hasSortPass,
-          ),
-          SizedBox(height: 2.h),
-          MenuActionButtonWidget(
-            iconName: 'share',
-            title: 'Share Progress',
-            subtitle: 'Tell friends about your achievements',
-            onPressed: _shareProgress,
-            iconColor: Colors.blue,
-          ),
-          SizedBox(height: 2.h),
-          MenuActionButtonWidget(
-            iconName: 'star',
-            title: 'Rate SortBliss',
-            subtitle: 'Help us improve the game',
-            onPressed: _rateApp,
-            iconColor: Colors.amber,
-          ),
-        ],
-      ),
+      );
+    }
+  }
+
+  Future<void> _shareGame() async {
+    await Share.share(
+      'Check out SortBliss - the most addictive puzzle game! Download now and challenge your mind.',
+      subject: 'SortBliss - Puzzle Game Challenge',
     );
+  }
+
+  Future<void> _rateApp() async {
+    final InAppReview inAppReview = InAppReview.instance;
+
+    if (await inAppReview.isAvailable()) {
+      inAppReview.requestReview();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.primary.withOpacity(0.1),
+              AppColors.background,
+            ],
+          ),
+        ),
         child: Stack(
           children: [
             const AnimatedBackgroundWidget(),
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  // Refresh daily challenges and leaderboard data
-                  await Future.delayed(const Duration(seconds: 1));
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Data refreshed!')),
-                    );
-                  }
-                },
+            SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
                 child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
                   child: Column(
                     children: [
                       SizedBox(height: 2.h),
-                      // App Logo/Title
-                      Text(
-                        'SortBliss',
-                        style: TextStyle(
-                          fontSize: 28.sp,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.lightTheme.colorScheme.primary,
-                          letterSpacing: 1.5,
+
+                      // Logo and Title
+                      Container(
+                        padding: EdgeInsets.all(6.w),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 20.w,
+                              height: 20.w,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4.w),
+                                gradient: const LinearGradient(
+                                  colors: [AppColors.primary, AppColors.secondary],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.shuffle,
+                                color: Colors.white,
+                                size: 10.w,
+                              ),
+                            ),
+                            SizedBox(height: 2.h),
+                            Text(
+                              'SortBliss',
+                              style: AppTextStyles.heading1.copyWith(
+                                fontSize: 32.sp,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            Text(
+                              'Master the Art of Sorting',
+                              style: AppTextStyles.body1.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: 1.h),
-                      Text(
-                        'Organize. Sort. Relax.',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color:
-                              AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
 
                       // Player Stats
                       PlayerStatsWidget(
-                        levelsCompleted: playerData["levelsCompleted"] as int,
-                        currentStreak: playerData["currentStreak"] as int,
-                        coinsEarned: playerData["coinsEarned"] as int,
+                        levelsCompleted: playerData["levelsCompleted"],
+                        currentStreak: playerData["currentStreak"],
+                        coinsEarned: playerData["coinsEarned"],
                       ),
                       SizedBox(height: 3.h),
 
                       // Level Progress
                       LevelProgressWidget(
-                        currentLevel: playerData["currentLevel"] as int,
-                        progressPercentage:
-                            playerData["levelProgress"] as double,
-                      ),
-                      SizedBox(height: 4.h),
-
-                      // Play Button
-                      PlayButtonWidget(
-                        onPressed: _navigateToGameplay,
+                        currentLevel: playerData["currentLevel"],
+                        progress: playerData["levelProgress"],
                       ),
                       SizedBox(height: 4.h),
 
                       // Daily Challenge
-                      DailyChallengeWidget(
-                        timeRemaining: playerData["timeUntilReset"] as String,
-                        isCompleted:
-                            playerData["dailyChallengeCompleted"] as bool,
-                        onPressed: _navigateToDailyChallenge,
+                      if (!_loadingDailyChallenge && _dailyChallenge != null)
+                        DailyChallengeWidget(
+                          challengePayload: _dailyChallenge!,
+                          timeRemaining: _dailyChallengeTimeRemaining,
+                          onPressed: _navigateToDailyChallenge,
+                        ),
+                      if (!_loadingDailyChallenge && _dailyChallenge != null)
+                        SizedBox(height: 4.h),
+
+                      // Play Button
+                      PlayButtonWidget(
+                        onPressed: _navigateToGame,
+                      ),
+                      SizedBox(height: 4.h),
+
+                      // Action Buttons
+                      // Leaderboard
+                      MenuActionButtonWidget(
+                        iconName: 'leaderboard',
+                        title: 'Leaderboard',
+                        subtitle: 'See how you rank globally',
+                        onPressed: _navigateToLeaderboard,
+                        iconColor: AppColors.primary,
                       ),
                       SizedBox(height: 3.h),
+
+                      // Share Game
+                      MenuActionButtonWidget(
+                        iconName: 'share',
+                        title: 'Share Game',
+                        subtitle: 'Challenge your friends',
+                        onPressed: _shareGame,
+                        iconColor: AppColors.secondary,
+                      ),
+                      SizedBox(height: 3.h),
+
+                      // Rate App
+                      if (playerData["showRatePrompt"] == true)
+                        MenuActionButtonWidget(
+                          iconName: 'star',
+                          title: 'Rate SortBliss',
+                          subtitle: 'Help us improve the game',
+                          onPressed: _rateApp,
+                          iconColor: Colors.amber,
+                          showBadge: true,
+                        ),
+                      if (playerData["showRatePrompt"] == true)
+                        SizedBox(height: 3.h),
 
                       // Achievements
                       MenuActionButtonWidget(
