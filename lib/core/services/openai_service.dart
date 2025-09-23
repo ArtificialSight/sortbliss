@@ -1,7 +1,5 @@
 import 'dart:convert';
-
 import 'package:dio/dio.dart';
-
 import '../config/environment.dart';
 import '../network/secure_supabase_client.dart';
 import 'ai/ai_errors.dart';
@@ -63,24 +61,27 @@ class OpenAiService implements AIProvider {
         if (data == null) {
           throw AIResponseParsingError('Empty response body');
         }
+
         final choices = data['choices'] as List<dynamic>?;
         if (choices == null || choices.isEmpty) {
           throw AIResponseParsingError('No choices in response');
         }
+
         final first = choices.first as Map<String, dynamic>?;
         final message = (first?['message'] as Map<String, dynamic>?)?['content'];
         if (message is! String || message.isEmpty) {
           throw AIResponseParsingError('Missing message content');
         }
+
         return message;
-      } on DioError catch (e) {
+      } on DioException catch (e) {
         _mapAndThrow(e);
       }
       throw AIServerError('Unreachable state');
     });
   }
 
-  Never _mapAndThrow(DioError e) {
+  Never _mapAndThrow(DioException e) {
     final status = e.response?.statusCode;
     switch (status) {
       case 401:
@@ -99,12 +100,11 @@ class OpenAiService implements AIProvider {
         if (status != null && status >= 500) {
           throw AIServerError('Server error ($status)', cause: e, statusCode: status);
         }
-        if (e.type == DioErrorType.connectionTimeout ||
-            e.type == DioErrorType.receiveTimeout) {
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
           throw AINetworkError('Network timeout', cause: e);
         }
         throw AINetworkError('Network error: ${e.message}', cause: e);
     }
   }
 }
-
