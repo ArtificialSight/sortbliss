@@ -45,22 +45,25 @@ Edge functions never return raw provider secret keys—only ephemeral tokens.
 
 ### OpenAI integration scaffold
 
-`OpenAiService` now implements a generic `AIProvider` strategy with:
+`OpenAiService` (direct) and `OpenAiProxyService` (secure) implement the generic
+`AIProvider` strategy. Prefer the proxy service for production because the real
+OpenAI API key stays server-side in a Supabase Edge Function (`openai-chat`).
 
 - Ephemeral token acquisition (Supabase Edge Function)
 - Exponential backoff + jitter retry policy
 - Structured error mapping (unauthorized, rate limit, network, parsing)
 - Pluggable provider registry for future models (Anthropic, Gemini, etc.)
 
-Example usage (after registering provider):
+Example usage (proxy, recommended):
 
 ```dart
 final service = OpenAiService();
-final reply = await service.createChatCompletion(
-  edgeFunction: 'issue-openai-token',
+final registry = AIProviderRegistry();
+registry.register(OpenAiProxyService());
+final reply = await registry.provider('openai-proxy').createChatCompletion(
   messages: const [
-    OpenAiMessage(role: 'system', content: 'You are a helpful assistant'),
-    OpenAiMessage(role: 'user', content: 'Say hello concisely'),
+    AIMessage(role: 'system', content: 'You are a helpful assistant'),
+    AIMessage(role: 'user', content: 'Say hello concisely'),
   ],
 );
 print(reply);
@@ -105,9 +108,17 @@ Errors derive from `AIError`:
 - `AINetworkError` (timeouts / connectivity)
 - `AIResponseParsingError` (invalid payload)
 
-### Supabase Edge Function (Mock)
-Located at `supabase/functions/issue-openai-token/index.ts`. Replace mock logic
-with real validation + ephemeral token issuance.
+### Supabase Edge Function (Proxy)
+Located at `supabase/functions/openai-chat/index.ts`.
+
+Environment variables (set in Supabase dashboard):
+- `OPENAI_API_KEY`: Your real OpenAI key (never exposed to client)
+- `OPENAI_BASE_URL` (optional override)
+
+Request flow:
+Client → `openai-chat` (Authorization: Bearer Supabase session) → OpenAI → Response → Client
+
+Legacy mock `issue-openai-token` function is retained only for demonstration and should be removed in production.
 
 ### Testing
 Example test in `test/openai_service_test.dart` uses a fake Dio client to
