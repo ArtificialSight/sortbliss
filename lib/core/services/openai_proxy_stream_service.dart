@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:dio/dio.dart';
-
 import '../config/environment.dart';
 import 'ai/ai_errors.dart';
 import 'ai/ai_provider.dart';
@@ -25,12 +23,13 @@ class OpenAiProxyStreamService {
   }) async* {
     final sessionToken = Environment.supabaseSessionToken;
     final functionsUrl = Environment.supabaseFunctionsUrl;
+
     if (sessionToken.isEmpty || functionsUrl.isEmpty) {
       throw AIUnauthorizedError('Missing session or functions URL');
     }
 
     aiDebug('[proxy-stream] start messages=${messages.length}');
-
+    
     final response = await _http.post<String>(
       '$functionsUrl/functions/v1/$edgeFunction',
       data: jsonEncode({
@@ -55,15 +54,19 @@ class OpenAiProxyStreamService {
 
     await for (final chunk in stream) {
       final text = utf8.decode(chunk);
-      for (final line in const LineSplitter().convert(text)) {
+      final lines = const LineSplitter().convert(text);
+      
+      for (final line in lines) {
         if (line.startsWith('data:')) {
           final payload = line.substring(5).trim();
           if (payload == '[DONE]') return;
           if (payload.isEmpty) continue;
+
           try {
             final jsonData = jsonDecode(payload) as Map<String, dynamic>;
             final choices = jsonData['choices'] as List<dynamic>?;
             if (choices == null || choices.isEmpty) continue;
+
             final delta = (choices.first as Map<String, dynamic>)['delta'] as Map<String, dynamic>?;
             final token = delta?['content'] as String?;
             if (token != null && token.isNotEmpty) {
