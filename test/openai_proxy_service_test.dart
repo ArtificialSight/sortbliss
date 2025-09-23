@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:sortbliss/core/services/openai_proxy_service.dart';
 import 'package:sortbliss/core/services/ai/ai_provider.dart';
 import 'package:sortbliss/core/services/ai/ai_errors.dart';
@@ -13,11 +12,12 @@ class _FakeDio extends Fake implements Dio {
   @override
   Future<Response<T>> post<T>(
     String path, {
-    data,
+    Object? data,
     Options? options,
     CancelToken? cancelToken,
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
+    Map<String, dynamic>? queryParameters,
   }) async {
     return Response<T>(
       data: _response.data as T?,
@@ -50,6 +50,7 @@ void main() {
           }
         },
       ));
+
       final service = OpenAiProxyService(http: dio as Dio);
       final result = await service.createChatCompletion(
         messages: const [AIMessage(role: 'user', content: 'Hi')],
@@ -67,6 +68,7 @@ void main() {
           }
         },
       ));
+
       final service = OpenAiProxyService(http: dio as Dio);
       expect(
         () => service.createChatCompletion(
