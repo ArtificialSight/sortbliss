@@ -45,8 +45,14 @@ Edge functions never return raw provider secret keys—only ephemeral tokens.
 
 ### OpenAI integration scaffold
 
-`OpenAiService` demonstrates calling the OpenAI Chat Completions API using a
-short‑lived token minted by a Supabase Edge Function. Example usage:
+`OpenAiService` now implements a generic `AIProvider` strategy with:
+
+- Ephemeral token acquisition (Supabase Edge Function)
+- Exponential backoff + jitter retry policy
+- Structured error mapping (unauthorized, rate limit, network, parsing)
+- Pluggable provider registry for future models (Anthropic, Gemini, etc.)
+
+Example usage (after registering provider):
 
 ```dart
 final service = OpenAiService();
@@ -60,8 +66,67 @@ final reply = await service.createChatCompletion(
 print(reply);
 ```
 
-You still need to implement the `issue-openai-token` Edge Function to return the
-ephemeral token JSON shape: `{ "token": "...", "expiresIn": 300 }`.
+### AI Provider Abstraction
+
+`AIProvider` interface:
+```dart
+abstract class AIProvider {
+  String get name;
+  Future<String> createChatCompletion({
+    required List<AIMessage> messages,
+    String? model,
+    double? temperature,
+  });
+}
+```
+
+Registering multiple providers:
+```dart
+final registry = AIProviderRegistry();
+registry.register(OpenAiService());
+// registry.register(AnthropicService()); // future
+final reply = await registry.provider('openai').createChatCompletion(
+  messages: [AIMessage(role: 'user', content: 'Hi')],
+);
+```
+
+### Retry Policy
+Defined in `retry_policy.dart` with exponential backoff + jitter. Override:
+```dart
+final customRetry = RetryPolicy(maxAttempts: 5);
+OpenAiService(retryPolicy: customRetry);
+```
+
+### Structured Errors
+Errors derive from `AIError`:
+- `AIUnauthorizedError` (401/403)
+- `AIRateLimitError` (429, includes optional retryAfter)
+- `AIServerError` (>=500)
+- `AINetworkError` (timeouts / connectivity)
+- `AIResponseParsingError` (invalid payload)
+
+### Supabase Edge Function (Mock)
+Located at `supabase/functions/issue-openai-token/index.ts`. Replace mock logic
+with real validation + ephemeral token issuance.
+
+### Testing
+Example test in `test/openai_service_test.dart` uses a fake Dio client to
+simulate provider responses. Run:
+```bash
+flutter test
+```
+
+### Continuous Integration
+GitHub Actions workflow at `.github/workflows/ci.yml` runs:
+1. `flutter pub get`
+2. `flutter analyze`
+3. `flutter test --coverage`
+
+Artifacts: `coverage/lcov.info` uploaded for inspection.
+
+### Environment Variables Recap
+`OPENAI_BASE_URL` optional override (defaults to `https://api.openai.com/v1`).
+Ephemeral tokens returned by edge functions — never store static API keys locally.
 
 ## �📋 Prerequisites
 
