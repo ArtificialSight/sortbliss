@@ -43,6 +43,26 @@ Session + provider tokens are exchanged dynamically; do not embed long‑lived k
 
 Edge functions never return raw provider secret keys—only ephemeral tokens.
 
+### OpenAI integration scaffold
+
+`OpenAiService` demonstrates calling the OpenAI Chat Completions API using a
+short‑lived token minted by a Supabase Edge Function. Example usage:
+
+```dart
+final service = OpenAiService();
+final reply = await service.createChatCompletion(
+  edgeFunction: 'issue-openai-token',
+  messages: const [
+    OpenAiMessage(role: 'system', content: 'You are a helpful assistant'),
+    OpenAiMessage(role: 'user', content: 'Say hello concisely'),
+  ],
+);
+print(reply);
+```
+
+You still need to implement the `issue-openai-token` Edge Function to return the
+ephemeral token JSON shape: `{ "token": "...", "expiresIn": 300 }`.
+
 ## �📋 Prerequisites
 
 - Flutter SDK (^3.29.2)

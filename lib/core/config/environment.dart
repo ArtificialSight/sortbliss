@@ -39,4 +39,6 @@ class Environment {
   static String get geminiSessionToken => _read('GEMINI_SESSION_TOKEN');
   static String get anthropicSessionToken => _read('ANTHROPIC_SESSION_TOKEN');
   static String get perplexitySessionToken => _read('PERPLEXITY_SESSION_TOKEN');
+  static String get openAiBaseUrl =>
+      _read('OPENAI_BASE_URL', fallback: 'https://api.openai.com/v1');
 }
