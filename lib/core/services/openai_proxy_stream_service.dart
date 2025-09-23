@@ -54,7 +54,8 @@ class OpenAiProxyStreamService {
 
     await for (final chunk in stream) {
       final text = utf8.decode(chunk);
-      final lines = const LineSplitter().convert(text);
+      // Explicitly cast to List<String> to ensure non-null type
+      final lines = LineSplitter().convert(text) as List<String>;
       
       for (final line in lines) {
         if (line.startsWith('data:')) {
