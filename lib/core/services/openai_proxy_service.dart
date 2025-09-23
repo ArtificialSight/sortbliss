@@ -37,7 +37,7 @@ class OpenAiProxyService implements AIProvider {
 
     final functionsUrl = Environment.supabaseFunctionsUrl;
     if (functionsUrl.isEmpty) {
-      throw AIError('Missing SUPABASE_FUNCTIONS_URL');
+      throw AIServerError('Missing SUPABASE_FUNCTIONS_URL');
     }
 
     return _retryPolicy.execute(() async {
