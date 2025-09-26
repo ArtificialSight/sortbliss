@@ -524,7 +524,7 @@ class DailyChallengeService {
         return DailyChallengePayload.fromJson(first);
       }
     }
-    return DailyChallengePayload.fromJson(remoteData);
+    return null;
   }
 
   Future<WeeklyEventSchedule?> _loadRemoteConfigWeeklyEvents() async {
@@ -568,9 +568,13 @@ class DailyChallengeService {
 
     try {
       final data = await remoteConfigLoader!.call();
-      _cachedRemoteConfig = data.isEmpty
-          ? <String, dynamic>{}
-          : Map<String, dynamic>.from(data);
+      if (data is Map) {
+        _cachedRemoteConfig = data.isEmpty
+            ? <String, dynamic>{}
+            : Map<String, dynamic>.from(data);
+      } else {
+        _cachedRemoteConfig = <String, dynamic>{};
+      }
     } catch (error, stackTrace) {
       developer.log(
         'Failed to load remote config override',
