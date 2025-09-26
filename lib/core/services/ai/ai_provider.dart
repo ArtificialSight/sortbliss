@@ -3,8 +3,10 @@ import 'ai_errors.dart';
 /// A single message exchanged with an AI provider.
 class AIMessage {
   const AIMessage({required this.role, required this.content});
+
   final String role; // e.g. system|user|assistant
   final String content;
+
   Map<String, dynamic> toJson() => {'role': role, 'content': content};
 }
 
@@ -29,7 +31,7 @@ class AIProviderRegistry {
   AIProvider provider(String name) {
     final p = _providers[name];
     if (p == null) {
-      throw AIError('Provider not registered: $name');
+      throw AIServerError('Provider not registered: $name');
     }
     return p;
   }

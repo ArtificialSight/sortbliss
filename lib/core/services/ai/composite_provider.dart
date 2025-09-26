@@ -6,8 +6,10 @@ import 'ai_debug.dart';
 /// the last error if all fail.
 class CompositeAIProvider implements AIProvider {
   CompositeAIProvider(this.providers, {this.name = 'composite'});
+
   @override
   final String name;
+
   final List<AIProvider> providers;
 
   @override
@@ -31,6 +33,6 @@ class CompositeAIProvider implements AIProvider {
         aiDebug('[composite] provider=${p.name} failed: ${e.message}');
       }
     }
-    throw lastError ?? AIError('All providers failed');
+    throw lastError ?? AIServerError('All providers failed');
   }
 }

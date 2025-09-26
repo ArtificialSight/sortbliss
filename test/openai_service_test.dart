@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:sortbliss/core/services/openai_service.dart';
 import 'package:sortbliss/core/services/ai/ai_provider.dart';
 import 'package:sortbliss/core/services/ai/ai_errors.dart';
@@ -21,11 +18,12 @@ class _MockDio extends Fake implements Dio {
   @override
   Future<Response<T>> post<T>(
     String path, {
-    data,
+    Object? data,
     Options? options,
     CancelToken? cancelToken,
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
+    Map<String, dynamic>? queryParameters,
   }) async {
     final resp = _handler(RequestOptions(path: path));
     return Response<T>(
@@ -50,12 +48,10 @@ void main() {
               ]
             },
           ));
-
       final service = OpenAiService(
         http: dio as Dio,
         secureClient: _MockSecureClient() as dynamic,
       );
-
       final result = await service.createChatCompletion(
         messages: const [AIMessage(role: 'user', content: 'Hi')],
       );

@@ -34,29 +34,14 @@ class Environment {
   /// Retrieves a configuration value by key with optional fallback.
   /// Follows the documented precedence order for secure key management.
   static String _read(String key, {String? fallback}) {
-    final fromDefine = const String.fromEnvironment(key);
-    if (fromDefine.isNotEmpty) {
-      return fromDefine;
-    }
+    // Note: const String.fromEnvironment requires a literal key at compile time.
+    // For dynamic keys, use String.fromEnvironment without const.
+    final fromDefine = String.fromEnvironment(key);
+    if (fromDefine.isNotEmpty) return fromDefine;
 
     final fromEnv = dotenv.env[key];
-    if (fromEnv != null && fromEnv.isNotEmpty) {
-      return fromEnv;
-    }
+    if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv;
 
     return fallback ?? '';
   }
-
-  static String get supabaseUrl => _read('SUPABASE_URL');
-  static String get supabaseFunctionsUrl =>
-      _read('SUPABASE_FUNCTIONS_URL', fallback: supabaseUrl);
-  static String get supabaseSessionToken => _read('SUPABASE_SESSION_TOKEN');
-
-  static String get openAiSessionToken => _read('OPENAI_SESSION_TOKEN');
-  static String get geminiSessionToken => _read('GEMINI_SESSION_TOKEN');
-  static String get anthropicSessionToken => _read('ANTHROPIC_SESSION_TOKEN');
-  static String get perplexitySessionToken => _read('PERPLEXITY_SESSION_TOKEN');
-  
-  static String get openAiBaseUrl =>
-      _read('OPENAI_BASE_URL', fallback: 'https://api.openai.com/v1');
 }
