@@ -27,7 +27,6 @@ class _CameraParallaxWidgetState extends State<CameraParallaxWidget>
   late AnimationController _cameraController;
   late AnimationController _zoomController;
   late AnimationController _lightingController;
-
   late Animation<double> _cameraXAnimation;
   late Animation<double> _cameraYAnimation;
   late Animation<double> _zoomAnimation;
@@ -237,10 +236,8 @@ class _CameraParallaxWidgetState extends State<CameraParallaxWidget>
               // Parallax background layers
               if (widget.enableParallax)
                 ..._buildParallaxLayers(totalTiltX, totalTiltY),
-
               // Dynamic lighting overlay
               _buildLightingOverlay(),
-
               // Main content with camera effects
               Transform(
                 alignment: Alignment.center,
@@ -255,10 +252,8 @@ class _CameraParallaxWidgetState extends State<CameraParallaxWidget>
                   ..rotateY(totalTiltX * 0.1),
                 child: widget.child,
               ),
-
               // Subtle vignette effect
               _buildVignetteOverlay(),
-
               // Film grain effect (very subtle)
               _buildFilmGrainOverlay(),
             ],
@@ -301,6 +296,10 @@ class _CameraParallaxWidgetState extends State<CameraParallaxWidget>
     return AnimatedBuilder(
       animation: _lightingAnimation,
       builder: (context, child) {
+        // Extract inline arithmetic to well-named variables
+        final double lightOpacity = 0.05 * _lightingAnimation.value;
+        final double shadowOpacity = 0.1 * (1.0 - _lightingAnimation.value);
+        
         return Container(
           width: double.infinity,
           height: double.infinity,
@@ -309,11 +308,9 @@ class _CameraParallaxWidgetState extends State<CameraParallaxWidget>
               center: Alignment.topCenter,
               radius: 1.5,
               colors: [
-                Colors.white.withOpacity(0.05 * _lightingAnimation.value,
-                ),
+                Colors.white.withOpacity(lightOpacity),
                 Colors.transparent,
-                Colors.black.withOpacity(0.1 * (1.0 - _lightingAnimation.value),
-                ),
+                Colors.black.withOpacity(shadowOpacity),
               ],
               stops: const [0.0, 0.5, 1.0],
             ),
@@ -393,7 +390,6 @@ class FilmGrainPainter extends CustomPainter {
       final x = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
       final opacity = random.nextDouble() * 0.1;
-
       paint.color = Colors.white.withOpacity(opacity);
       canvas.drawCircle(Offset(x, y), 0.5, paint);
     }
