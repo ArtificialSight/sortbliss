@@ -106,7 +106,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
                     radius: 0.8,
                     colors: [
                       AppTheme.lightTheme.primaryColor
-                          .withValues(alpha: _ambientAnimation.value * 0.2),
+                          .withOpacity(_ambientAnimation.value * 0.2),
                       Colors.transparent,
                     ],
                   ),
@@ -184,14 +184,14 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
               boxShadow: [
                 // Main shadow
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: Colors.black.withOpacity(0.3),
                   blurRadius: 12,
                   offset: Offset(2, 4),
                   spreadRadius: 1,
                 ),
                 // Depth shadow for 3D effect
                 BoxShadow(
-                  color: (Color(item['color'] as int)).withValues(alpha: 0.2),
+                  color: (Color(item['color'] as int)).withOpacity(0.2),
                   blurRadius: 8,
                   offset: Offset(1, 2),
                   spreadRadius: 0,
@@ -199,7 +199,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
                 // Highlight for tutorial mode
                 if (widget.enableTutorialMode && isHighlighted)
                   BoxShadow(
-                    color: Colors.yellow.withValues(alpha: 0.6),
+                    color: Colors.yellow.withOpacity(0.6),
                     blurRadius: 20,
                     spreadRadius: 3,
                   ),
@@ -213,8 +213,8 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Color(item['color'] as int).withValues(alpha: 0.9),
-                      Color(item['color'] as int).withValues(alpha: 0.7),
+                      Color(item['color'] as int).withOpacity(0.9),
+                      Color(item['color'] as int).withOpacity(0.7),
                       Color(item['color'] as int),
                     ],
                   ),
@@ -228,7 +228,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
                           begin: Alignment.topLeft,
                           end: Alignment.center,
                           colors: [
-                            Colors.white.withValues(alpha: 0.3),
+                            Colors.white.withOpacity(0.3),
                             Colors.transparent,
                           ],
                         ),
@@ -246,7 +246,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
                               fontSize: 8.w,
                               shadows: [
                                 Shadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
+                                  color: Colors.black.withOpacity(0.3),
                                   offset: Offset(1, 1),
                                   blurRadius: 3,
                                 ),
@@ -264,7 +264,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
                                 fontSize: 2.2.w,
                                 shadows: [
                                   Shadow(
-                                    color: Colors.black.withValues(alpha: 0.7),
+                                    color: Colors.black.withOpacity(0.7),
                                     offset: Offset(0.5, 0.5),
                                     blurRadius: 2,
                                   ),
@@ -316,19 +316,19 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(item['color'] as int).withValues(alpha: 0.9),
+              Color(item['color'] as int).withOpacity(0.9),
               Color(item['color'] as int),
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withOpacity(0.4),
               blurRadius: 20,
               offset: Offset(0, 8),
               spreadRadius: 2,
             ),
             BoxShadow(
-              color: Color(item['color'] as int).withValues(alpha: 0.3),
+              color: Color(item['color'] as int).withOpacity(0.3),
               blurRadius: 15,
               spreadRadius: 1,
             ),
@@ -341,7 +341,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
               fontSize: 10.w,
               shadows: [
                 Shadow(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: Colors.black.withOpacity(0.5),
                   offset: Offset(2, 2),
                   blurRadius: 4,
                 ),
@@ -360,7 +360,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
           center: Alignment.center,
           radius: 0.7,
           colors: [
-            Colors.yellow.withValues(alpha: 0.1),
+            Colors.yellow.withOpacity(0.1),
             Colors.transparent,
           ],
         ),
@@ -369,10 +369,10 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
+            color: Colors.black.withOpacity(0.7),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.yellow.withValues(alpha: 0.5),
+              color: Colors.yellow.withOpacity(0.5),
               width: 2,
             ),
           ),
@@ -411,8 +411,8 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.lightTheme.primaryColor.withValues(alpha: 0.3),
-                  AppTheme.lightTheme.primaryColor.withValues(alpha: 0.1),
+                  AppTheme.lightTheme.primaryColor.withOpacity(0.3),
+                  AppTheme.lightTheme.primaryColor.withOpacity(0.1),
                 ],
               ),
             ),
@@ -425,7 +425,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
           Text(
             'All items sorted!',
             style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withOpacity(0.9),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -433,7 +433,7 @@ class _CentralPileWidgetState extends State<CentralPileWidget>
           Text(
             'Great job organizing everything!',
             style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withValues(alpha: 0.7),
+              color: Colors.white.withOpacity(0.7),
             ),
             textAlign: TextAlign.center,
           ),

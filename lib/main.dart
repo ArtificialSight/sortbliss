@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 import 'core/app_export.dart';
+import 'core/services/achievements_tracker_service.dart';
+import 'core/services/player_profile_service.dart';
 import 'widgets/custom_error_widget.dart';
 import 'theme/app_theme.dart';
 
@@ -9,6 +11,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   bool _hasShownError = false;
   await Environment.bootstrap();
+  await AchievementsTrackerService.instance.ensureInitialized();
+  await PlayerProfileService.instance.ensureInitialized();
   // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE
   ErrorWidget.builder = (FlutterErrorDetails details) {
     if (!_hasShownError) {

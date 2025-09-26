@@ -77,7 +77,7 @@ class _LevelCompleteModalWidgetState extends State<LevelCompleteModalWidget>
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black.withValues(alpha: 0.7),
+      color: Colors.black.withOpacity(0.7),
       child: Center(
         child: ScaleTransition(
           scale: _scaleAnimation,
@@ -89,7 +89,7 @@ class _LevelCompleteModalWidgetState extends State<LevelCompleteModalWidget>
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: Colors.black.withOpacity(0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -145,7 +145,7 @@ class _LevelCompleteModalWidgetState extends State<LevelCompleteModalWidget>
                               iconName: isActive ? 'star' : 'star_border',
                               color: isActive
                                   ? Colors.amber
-                                  : Colors.grey.withValues(alpha: 0.4),
+                                  : Colors.grey.withOpacity(0.4),
                               size: 10.w,
                             ),
                           ),
@@ -162,11 +162,11 @@ class _LevelCompleteModalWidgetState extends State<LevelCompleteModalWidget>
                   padding: EdgeInsets.all(4.w),
                   decoration: BoxDecoration(
                     color: AppTheme.lightTheme.colorScheme.surface
-                        .withValues(alpha: 0.5),
+                        .withOpacity(0.5),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: AppTheme.lightTheme.colorScheme.outline
-                          .withValues(alpha: 0.2),
+                          .withOpacity(0.2),
                     ),
                   ),
                   child: Column(

@@ -33,7 +33,7 @@ class MenuActionButtonWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -48,7 +48,7 @@ class MenuActionButtonWidget extends StatelessWidget {
                   decoration: BoxDecoration(
                     color:
                         (iconColor ?? AppTheme.lightTheme.colorScheme.primary)
-                            .withValues(alpha: 0.1),
+                            .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: CustomIconWidget(

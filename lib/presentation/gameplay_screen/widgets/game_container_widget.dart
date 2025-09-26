@@ -86,8 +86,8 @@ class _GameContainerWidgetState extends State<GameContainerWidget>
                   margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 1.h),
                   decoration: BoxDecoration(
                     color: widget.isHighlighted
-                        ? widget.containerColor.withValues(alpha: 0.8)
-                        : widget.containerColor.withValues(alpha: 0.6),
+                        ? widget.containerColor.withOpacity(0.8)
+                        : widget.containerColor.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: widget.isHighlighted
@@ -97,7 +97,7 @@ class _GameContainerWidgetState extends State<GameContainerWidget>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: Colors.black.withOpacity(0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -159,7 +159,7 @@ class _GameContainerWidgetState extends State<GameContainerWidget>
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.black
-                                                .withValues(alpha: 0.2),
+                                                .withOpacity(0.2),
                                             blurRadius: 4,
                                             offset: const Offset(0, 2),
                                           ),

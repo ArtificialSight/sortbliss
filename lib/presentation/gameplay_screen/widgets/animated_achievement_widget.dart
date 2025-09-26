@@ -61,8 +61,8 @@ class _AnimatedAchievementWidgetState extends State<AnimatedAchievementWidget> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                widget.color.withValues(alpha: 0.9),
-                widget.color.withValues(alpha: 0.7),
+                widget.color.withOpacity(0.9),
+                widget.color.withOpacity(0.7),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -70,18 +70,18 @@ class _AnimatedAchievementWidgetState extends State<AnimatedAchievementWidget> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: widget.color.withValues(alpha: 0.3),
+                color: widget.color.withOpacity(0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
             ],
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Colors.white.withOpacity(0.3),
               width: 1,
             ),
           ),
@@ -91,10 +91,10 @@ class _AnimatedAchievementWidgetState extends State<AnimatedAchievementWidget> {
               Container(
                 padding: EdgeInsets.all(3.w),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: Colors.white.withOpacity(0.3),
                   ),
                 ),
                 child: Icon(
@@ -112,7 +112,7 @@ class _AnimatedAchievementWidgetState extends State<AnimatedAchievementWidget> {
                   )
                   .shimmer(
                     duration: 1500.ms,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: Colors.white.withOpacity(0.5),
                   ),
 
               SizedBox(width: 4.w),
@@ -143,7 +143,7 @@ class _AnimatedAchievementWidgetState extends State<AnimatedAchievementWidget> {
                       widget.description,
                       style: GoogleFonts.inter(
                         fontSize: 12.sp,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: Colors.white.withOpacity(0.9),
                         fontWeight: FontWeight.w500,
                       ),
                     )
@@ -168,12 +168,12 @@ class _AnimatedAchievementWidgetState extends State<AnimatedAchievementWidget> {
                 child: Container(
                   padding: EdgeInsets.all(2.w),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.close,
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: Colors.white.withOpacity(0.8),
                     size: 5.w,
                   ),
                 ),

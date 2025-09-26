@@ -130,7 +130,7 @@ class _ScoreBreakdownWidgetState extends State<ScoreBreakdownWidget>
         boxShadow: [
           BoxShadow(
             color:
-                AppTheme.lightTheme.colorScheme.shadow.withValues(alpha: 0.1),
+                AppTheme.lightTheme.colorScheme.shadow.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

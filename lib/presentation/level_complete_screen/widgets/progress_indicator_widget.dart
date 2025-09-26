@@ -66,7 +66,7 @@ class _ProgressIndicatorWidgetState extends State<ProgressIndicatorWidget>
         color: AppTheme.lightTheme.colorScheme.surface,
         borderRadius: BorderRadius.circular(3.w),
         border: Border.all(
-          color: AppTheme.lightTheme.colorScheme.outline.withValues(alpha: 0.2),
+          color: AppTheme.lightTheme.colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -102,7 +102,7 @@ class _ProgressIndicatorWidgetState extends State<ProgressIndicatorWidget>
                     height: 1.5.h,
                     decoration: BoxDecoration(
                       color: AppTheme.lightTheme.colorScheme.outline
-                          .withValues(alpha: 0.2),
+                          .withOpacity(0.2),
                       borderRadius: BorderRadius.circular(1.h),
                     ),
                     child: Stack(
@@ -112,7 +112,7 @@ class _ProgressIndicatorWidgetState extends State<ProgressIndicatorWidget>
                           height: 1.5.h,
                           decoration: BoxDecoration(
                             color: AppTheme.lightTheme.colorScheme.outline
-                                .withValues(alpha: 0.1),
+                                .withOpacity(0.1),
                             borderRadius: BorderRadius.circular(1.h),
                           ),
                         ),

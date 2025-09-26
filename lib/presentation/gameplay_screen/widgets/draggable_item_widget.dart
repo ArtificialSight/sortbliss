@@ -89,7 +89,7 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
+                      color: Colors.black.withOpacity(0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -110,10 +110,10 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
               width: 12.w,
               height: 12.w,
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
+                color: Colors.grey.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.grey.withValues(alpha: 0.5),
+                  color: Colors.grey.withOpacity(0.5),
                   width: 2,
                   style: BorderStyle.solid,
                 ),
@@ -122,7 +122,7 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
                 child: Text(
                   widget.item['shape'] as String,
                   style: AppTheme.lightTheme.textTheme.labelMedium?.copyWith(
-                    color: Colors.grey.withValues(alpha: 0.6),
+                    color: Colors.grey.withOpacity(0.6),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -148,7 +148,7 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withOpacity(0.2),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                     ),

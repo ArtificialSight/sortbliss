@@ -130,9 +130,9 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
           center: Alignment.center,
           radius: 1.0,
           colors: [
-            Colors.blue.shade900.withValues(alpha: 0.95),
-            Colors.purple.shade900.withValues(alpha: 0.95),
-            Colors.black.withValues(alpha: 0.98),
+            Colors.blue.shade900.withOpacity(0.95),
+            Colors.purple.shade900.withOpacity(0.95),
+            Colors.black.withOpacity(0.98),
           ],
         ),
       ),
@@ -165,7 +165,7 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
               width: 80.w,
               height: 1.h,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: AnimatedBuilder(
@@ -187,7 +187,7 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
                         boxShadow: [
                           BoxShadow(
                             color:
-                                Colors.yellow.shade400.withValues(alpha: 0.5),
+                                Colors.yellow.shade400.withOpacity(0.5),
                             blurRadius: 10,
                           ),
                         ],
@@ -210,10 +210,10 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
               Container(
                 padding: EdgeInsets.all(4.w),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: Colors.white.withOpacity(0.3),
                   ),
                 ),
                 child: Column(
@@ -222,7 +222,7 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
                       'Score',
                       style: GoogleFonts.inter(
                         fontSize: 14.sp,
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: Colors.white.withOpacity(0.8),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -260,7 +260,7 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
                       index < widget.stars ? Icons.star : Icons.star_border,
                       color: index < widget.stars
                           ? Colors.yellow.shade400
-                          : Colors.white.withValues(alpha: 0.3),
+                          : Colors.white.withOpacity(0.3),
                       size: 12.w,
                     ),
                   );
@@ -274,7 +274,7 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
                         )
                         .shimmer(
                           duration: 1000.ms,
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: Colors.white.withOpacity(0.5),
                         ))
                     .toList(),
               ),
@@ -291,13 +291,13 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.purple.shade400.withValues(alpha: 0.3),
-                      Colors.pink.shade400.withValues(alpha: 0.3),
+                      Colors.purple.shade400.withOpacity(0.3),
+                      Colors.pink.shade400.withOpacity(0.3),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.white.withOpacity(0.2),
                   ),
                 ),
                 child: Column(
@@ -336,10 +336,10 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
               Container(
                 padding: EdgeInsets.all(4.w),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade400.withValues(alpha: 0.2),
+                  color: Colors.green.shade400.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
-                    color: Colors.green.shade400.withValues(alpha: 0.5),
+                    color: Colors.green.shade400.withOpacity(0.5),
                   ),
                 ),
                 child: Column(
@@ -397,7 +397,7 @@ class _ProgressTransitionWidgetState extends State<ProgressTransitionWidget>
               style: GoogleFonts.inter(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.8),
+                color: Colors.white.withOpacity(0.8),
               ),
             )
                 .animate()

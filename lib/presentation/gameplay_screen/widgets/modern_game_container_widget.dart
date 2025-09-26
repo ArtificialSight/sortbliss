@@ -84,7 +84,7 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
     final baseColor = Color(_containerConfig?['color'] ?? 0xFF718096);
     _colorAnimation = ColorTween(
       begin: baseColor,
-      end: baseColor.withValues(alpha: 0.9),
+      end: baseColor.withOpacity(0.9),
     ).animate(CurvedAnimation(
       parent: _highlightController,
       curve: Curves.easeInOut,
@@ -172,12 +172,10 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Color(gradientColors[0]).withValues(
-                            alpha: (_isDraggedOver || widget.isHighlighted)
+                        Color(gradientColors[0]).withOpacity((_isDraggedOver || widget.isHighlighted)
                                 ? 0.95
                                 : 0.8),
-                        Color(gradientColors[1]).withValues(
-                            alpha: (_isDraggedOver || widget.isHighlighted)
+                        Color(gradientColors[1]).withOpacity((_isDraggedOver || widget.isHighlighted)
                                 ? 0.9
                                 : 0.7),
                       ],
@@ -197,7 +195,7 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
                     boxShadow: [
                       // Main shadow
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
+                        color: Colors.black.withOpacity(0.15),
                         blurRadius: widget.isHighlighted ? 20 : 12,
                         offset: const Offset(0, 8),
                         spreadRadius: widget.isHighlighted ? 2 : 0,
@@ -206,7 +204,7 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
                       if (widget.isHighlighted || _isDraggedOver)
                         BoxShadow(
                           color:
-                              Color(gradientColors[0]).withValues(alpha: 0.4),
+                              Color(gradientColors[0]).withOpacity(0.4),
                           blurRadius: 25,
                           offset: const Offset(0, 0),
                           spreadRadius: 3,
@@ -234,7 +232,7 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
                           // Glass morphism effect
                           border: Border(
                             bottom: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: Colors.white.withOpacity(0.2),
                               width: 1,
                             ),
                           ),
@@ -250,7 +248,7 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
                                 ),
                                 gradient: LinearGradient(
                                   colors: [
-                                    Colors.white.withValues(alpha: 0.1),
+                                    Colors.white.withOpacity(0.1),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -276,7 +274,7 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
                                       shadows: [
                                         Shadow(
                                           color: Colors.black
-                                              .withValues(alpha: 0.3),
+                                              .withOpacity(0.3),
                                           offset: const Offset(1, 1),
                                           blurRadius: 2,
                                         ),
@@ -304,9 +302,9 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.white.withValues(alpha: 0.1),
+                                Colors.white.withOpacity(0.1),
                                 Colors.transparent,
-                                Colors.black.withValues(alpha: 0.05),
+                                Colors.black.withOpacity(0.05),
                               ],
                             ),
                           ),
@@ -341,16 +339,16 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
                 height: 12.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withOpacity(0.3),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: Colors.white.withOpacity(0.5),
                     width: 2,
                     style: BorderStyle.solid,
                   ),
                 ),
                 child: Icon(
                   Icons.add,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.white.withOpacity(0.7),
                   size: 6.w,
                 ),
               ),
@@ -361,7 +359,7 @@ class _ModernGameContainerWidgetState extends State<ModernGameContainerWidget>
         Text(
           description,
           style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: Colors.white.withOpacity(0.8),
             fontWeight: FontWeight.w500,
           ),
           textAlign: TextAlign.center,
