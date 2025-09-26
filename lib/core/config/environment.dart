@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Centralised access to environment configuration.
 ///
 /// Resolution order:
@@ -33,10 +34,18 @@ class Environment {
     return fallback ?? '';
   }
 
+  static String? _nullIfEmpty(String value) {
+    return value.isEmpty ? null : value;
+  }
+
   static String get supabaseUrl => _read('SUPABASE_URL');
   static String get supabaseFunctionsUrl =>
       _read('SUPABASE_FUNCTIONS_URL', fallback: supabaseUrl);
   static String get supabaseSessionToken => _read('SUPABASE_SESSION_TOKEN');
+  static String get supabaseAnonKey => _read('SUPABASE_ANON_KEY');
+  static String? get supabaseAnonKeyOrNull => _nullIfEmpty(supabaseAnonKey);
+  static String? get supabaseDailyChallengeEndpoint =>
+      _nullIfEmpty(_read('SUPABASE_DAILY_CHALLENGE_ENDPOINT'));
   static String get openAiSessionToken => _read('OPENAI_SESSION_TOKEN');
   static String get geminiSessionToken => _read('GEMINI_SESSION_TOKEN');
   static String get anthropicSessionToken => _read('ANTHROPIC_SESSION_TOKEN');

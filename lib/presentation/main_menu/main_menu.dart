@@ -58,18 +58,8 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
     _fadeController.forward();
 
     _dailyChallengeService = DailyChallengeService(
-      supabaseRestEndpoint: _envOrNull(
-        const String.fromEnvironment(
-          'SUPABASE_DAILY_CHALLENGE_ENDPOINT',
-          defaultValue: '',
-        ),
-      ),
-      supabaseAnonKey: _envOrNull(
-        const String.fromEnvironment(
-          'SUPABASE_ANON_KEY',
-          defaultValue: '',
-        ),
-      ),
+      supabaseRestEndpoint: Environment.supabaseDailyChallengeEndpoint,
+      supabaseAnonKey: Environment.supabaseAnonKeyOrNull,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDailyChallenge();
@@ -134,13 +124,6 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
         });
       }
     }
-  }
-
-  String? _envOrNull(String value) {
-    if (value.isEmpty) {
-      return null;
-    }
-    return value;
   }
 
   void _navigateToGameplay() {

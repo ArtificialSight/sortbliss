@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:collection/collection.dart';
@@ -256,6 +257,7 @@ class DailyChallengeService {
     this.remoteConfigLoader,
     this.cacheDuration = const Duration(minutes: 5),
     this.weeklyEventCacheDuration = const Duration(hours: 6),
+    this.remoteConfigCacheDuration = const Duration(minutes: 2),
   }) : _httpClient = httpClient ?? Dio();
 
   final Dio _httpClient;
@@ -264,6 +266,7 @@ class DailyChallengeService {
   final Future<Map<String, dynamic>> Function()? remoteConfigLoader;
   final Duration cacheDuration;
   final Duration weeklyEventCacheDuration;
+  final Duration remoteConfigCacheDuration;
 
   DailyChallengePayload? _cachedChallenge;
   DateTime? _lastChallengeFetch;
@@ -271,15 +274,33 @@ class DailyChallengeService {
   WeeklyEventSchedule? _cachedSchedule;
   DateTime? _lastScheduleFetch;
 
+  Map<String, dynamic>? _cachedRemoteConfig;
+  DateTime? _lastRemoteConfigFetch;
+
+  bool _isDisposed = false;
+
   final StreamController<DailyChallengePayload> _challengeController =
       StreamController<DailyChallengePayload>.broadcast();
 
   Stream<DailyChallengePayload> get challengeStream =>
       _challengeController.stream;
 
+  void _ensureNotDisposed() {
+    if (_isDisposed) {
+      throw StateError('DailyChallengeService has been disposed');
+    }
+  }
+
+  void _emitChallenge(DailyChallengePayload payload) {
+    if (!_challengeController.isClosed) {
+      _challengeController.add(payload);
+    }
+  }
+
   Future<DailyChallengePayload> loadDailyChallenge({
     bool forceRefresh = false,
   }) async {
+    _ensureNotDisposed();
     final now = DateTime.now();
     final cacheIsValid =
         !forceRefresh &&
@@ -294,8 +315,13 @@ class DailyChallengeService {
     DailyChallengePayload? payload;
     try {
       payload = await _fetchDailyChallengeFromSupabase();
-    } catch (_) {
-      // ignore - we will fall back to remote config/local generation
+    } catch (error, stackTrace) {
+      developer.log(
+        'Failed to fetch daily challenge from Supabase',
+        error: error,
+        stackTrace: stackTrace,
+        name: 'DailyChallengeService',
+      );
     }
 
     if (payload == null) {
@@ -306,13 +332,14 @@ class DailyChallengeService {
 
     _cachedChallenge = payload;
     _lastChallengeFetch = now;
-    _challengeController.add(payload);
+    _emitChallenge(payload);
     return payload;
   }
 
   Future<WeeklyEventSchedule> loadWeeklyEvents({
     bool forceRefresh = false,
   }) async {
+    _ensureNotDisposed();
     final now = DateTime.now();
     final cacheIsValid =
         !forceRefresh &&
@@ -327,8 +354,13 @@ class DailyChallengeService {
     WeeklyEventSchedule? schedule;
     try {
       schedule = await _fetchWeeklyEventsFromSupabase();
-    } catch (_) {
-      // ignore - fallback below
+    } catch (error, stackTrace) {
+      developer.log(
+        'Failed to fetch weekly events from Supabase',
+        error: error,
+        stackTrace: stackTrace,
+        name: 'DailyChallengeService',
+      );
     }
 
     schedule ??= await _loadRemoteConfigWeeklyEvents();
@@ -352,16 +384,18 @@ class DailyChallengeService {
   }
 
   Future<DailyChallengePayload> recordProgress({required int starsEarned}) async {
+    _ensureNotDisposed();
     final challenge = await loadDailyChallenge();
     final updated = challenge.copyWith(
       currentStars: min(challenge.currentStars + starsEarned, challenge.targetStars),
     );
     _cachedChallenge = updated;
-    _challengeController.add(updated);
+    _emitChallenge(updated);
     return updated;
   }
 
   Future<DailyChallengePayload> claimRewards() async {
+    _ensureNotDisposed();
     final challenge = await loadDailyChallenge();
     if (!challenge.isCompleted) {
       return challenge;
@@ -370,7 +404,7 @@ class DailyChallengeService {
     if (!challenge.rewardsClaimed) {
       final updated = challenge.copyWith(rewardsClaimed: true);
       _cachedChallenge = updated;
-      _challengeController.add(updated);
+      _emitChallenge(updated);
       return updated;
     }
     return challenge;
@@ -381,10 +415,17 @@ class DailyChallengeService {
     _lastChallengeFetch = null;
     _cachedSchedule = null;
     _lastScheduleFetch = null;
+    _cachedRemoteConfig = null;
+    _lastRemoteConfigFetch = null;
   }
 
   Future<void> dispose() async {
+    if (_isDisposed) {
+      return;
+    }
+    _isDisposed = true;
     await _challengeController.close();
+    await _httpClient.close(force: true);
   }
 
   Future<DailyChallengePayload?> _fetchDailyChallengeFromSupabase() async {
@@ -469,9 +510,19 @@ class DailyChallengeService {
       return null;
     }
 
-    final remoteData = await remoteConfigLoader!.call();
+    final remoteData = await _loadRemoteConfigData();
     if (remoteData.isEmpty) {
       return null;
+    }
+    final challengeJson = remoteData['daily_challenge'];
+    if (challengeJson is Map<String, dynamic>) {
+      return DailyChallengePayload.fromJson(challengeJson);
+    }
+    if (challengeJson is List && challengeJson.isNotEmpty) {
+      final first = challengeJson.first;
+      if (first is Map<String, dynamic>) {
+        return DailyChallengePayload.fromJson(first);
+      }
     }
     return DailyChallengePayload.fromJson(remoteData);
   }
@@ -480,7 +531,7 @@ class DailyChallengeService {
     if (remoteConfigLoader == null) {
       return null;
     }
-    final remoteData = await remoteConfigLoader!.call();
+    final remoteData = await _loadRemoteConfigData();
     final eventsJson = remoteData['weekly_events'];
     if (eventsJson is! List<dynamic> || eventsJson.isEmpty) {
       return null;
@@ -499,6 +550,38 @@ class DailyChallengeService {
       generatedAt: DateTime.now().toUtc(),
       events: events,
     );
+  }
+
+  Future<Map<String, dynamic>> _loadRemoteConfigData() async {
+    if (remoteConfigLoader == null) {
+      return const <String, dynamic>{};
+    }
+
+    final now = DateTime.now();
+    final cacheIsValid =
+        _cachedRemoteConfig != null &&
+        _lastRemoteConfigFetch != null &&
+        now.difference(_lastRemoteConfigFetch!) < remoteConfigCacheDuration;
+    if (cacheIsValid) {
+      return _cachedRemoteConfig!;
+    }
+
+    try {
+      final data = await remoteConfigLoader!.call();
+      _cachedRemoteConfig = data.isEmpty
+          ? <String, dynamic>{}
+          : Map<String, dynamic>.from(data);
+    } catch (error, stackTrace) {
+      developer.log(
+        'Failed to load remote config override',
+        error: error,
+        stackTrace: stackTrace,
+        name: 'DailyChallengeService',
+      );
+      _cachedRemoteConfig = <String, dynamic>{};
+    }
+    _lastRemoteConfigFetch = now;
+    return _cachedRemoteConfig!;
   }
 
   DailyChallengePayload _generateLocalChallenge() {
