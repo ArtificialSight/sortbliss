@@ -92,7 +92,7 @@ class _ActionButtonsWidgetState extends State<ActionButtonsWidget>
           backgroundColor: backgroundColor,
           foregroundColor: textColor,
           elevation: 4,
-          shadowColor: backgroundColor.withValues(alpha: 0.3),
+          shadowColor: backgroundColor.withOpacity(0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(3.w),
           ),
@@ -163,14 +163,14 @@ class _ActionButtonsWidgetState extends State<ActionButtonsWidget>
         gradient: LinearGradient(
           colors: [
             AppTheme.lightTheme.colorScheme.tertiary,
-            AppTheme.lightTheme.colorScheme.tertiary.withValues(alpha: 0.8),
+            AppTheme.lightTheme.colorScheme.tertiary.withOpacity(0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(2.5.w),
         boxShadow: [
           BoxShadow(
             color:
-                AppTheme.lightTheme.colorScheme.tertiary.withValues(alpha: 0.3),
+                AppTheme.lightTheme.colorScheme.tertiary.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

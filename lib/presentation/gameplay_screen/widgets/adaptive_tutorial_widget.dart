@@ -7,6 +7,7 @@ import '../../../theme/app_theme.dart';
 import '../../../core/premium_audio_manager.dart';
 import '../../../core/haptic_manager.dart';
 import '../../../core/gesture_controller.dart';
+import '../user_speed_classifier.dart';
 
 class AdaptiveTutorialWidget extends StatefulWidget {
   final int currentLevel;
@@ -65,13 +66,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
 
   void _calculateAdaptiveDelay() {
     // Adapt tutorial speed to user's demonstrated speed
-    if (widget.userSpeed > 1.5) {
-      _adaptiveDelay = 0.7; // Faster users get quicker tutorial
-    } else if (widget.userSpeed < 0.7) {
-      _adaptiveDelay = 1.5; // Slower users get more time
-    } else {
-      _adaptiveDelay = 1.0; // Default speed
-    }
+    _adaptiveDelay = calculateAdaptiveDelay(widget.userSpeed);
   }
 
   void _generateTutorialSteps() {
@@ -349,7 +344,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
           children: [
             // Semi-transparent overlay
             Container(
-              color: Colors.black.withValues(alpha: _overlayAnimation.value),
+              color: Colors.black.withOpacity(_overlayAnimation.value),
               width: double.infinity,
               height: double.infinity,
             ),
@@ -373,15 +368,15 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
                       end: Alignment.bottomRight,
                       colors: [
                         AppTheme.lightTheme.primaryColor
-                            .withValues(alpha: 0.95),
+                            .withOpacity(0.95),
                         AppTheme.lightTheme.primaryColor
-                            .withValues(alpha: 0.85),
+                            .withOpacity(0.85),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: Colors.black.withOpacity(0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -400,7 +395,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
                               vertical: 1.h,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.3),
+                              color: Colors.white.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -420,7 +415,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
                               _voiceEnabled
                                   ? Icons.volume_up
                                   : Icons.volume_off,
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: Colors.white.withOpacity(0.8),
                               size: 6.w,
                             ),
                           ),
@@ -430,7 +425,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
                             onTap: _skipTutorial,
                             child: Icon(
                               Icons.skip_next,
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: Colors.white.withOpacity(0.8),
                               size: 6.w,
                             ),
                           ),
@@ -456,7 +451,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
                         currentStep['description'] ?? '',
                         style:
                             AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Colors.white.withOpacity(0.9),
                           height: 1.4,
                         ),
                       ).animate().slideX(
@@ -476,7 +471,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
                               child: CircularProgressIndicator(
                                 strokeWidth: 3,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white.withValues(alpha: 0.8),
+                                  Colors.white.withOpacity(0.8),
                                 ),
                               ),
                             ),
@@ -484,7 +479,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
                             Text(
                               'Waiting for your action...',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: Colors.white.withOpacity(0.8),
                                 fontSize: 12.sp,
                                 fontStyle: FontStyle.italic,
                               ),
@@ -541,16 +536,14 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
               height: size.height,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Colors.yellow.withValues(
-                    alpha: 0.8 * _highlightAnimation.value,
+                  color: Colors.yellow.withOpacity(0.8 * _highlightAnimation.value,
                   ),
                   width: 3,
                 ),
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.yellow.withValues(
-                      alpha: 0.5 * _highlightAnimation.value,
+                    color: Colors.yellow.withOpacity(0.5 * _highlightAnimation.value,
                     ),
                     blurRadius: 20,
                     offset: const Offset(0, 0),
@@ -606,7 +599,7 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.yellow.withValues(alpha: 0.5),
+                      color: Colors.yellow.withOpacity(0.5),
                       blurRadius: 15,
                       offset: const Offset(0, 0),
                     ),

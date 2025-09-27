@@ -179,11 +179,11 @@ class _SplashScreenState extends State<SplashScreen>
       width: 80.w,
       height: 25.h,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -200,7 +200,7 @@ class _SplashScreenState extends State<SplashScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -227,7 +227,7 @@ class _SplashScreenState extends State<SplashScreen>
           Text(
             'Organize & Relax',
             style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withOpacity(0.8),
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -248,7 +248,7 @@ class _SplashScreenState extends State<SplashScreen>
             _loadingText,
             textAlign: TextAlign.center,
             style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Colors.white.withOpacity(0.9),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -264,7 +264,7 @@ class _SplashScreenState extends State<SplashScreen>
           width: 60.w,
           height: 0.8.h,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(4),
           ),
           child: ClipRRect(
@@ -273,7 +273,7 @@ class _SplashScreenState extends State<SplashScreen>
               value: _loadingProgress,
               backgroundColor: Colors.transparent,
               valueColor: AlwaysStoppedAnimation<Color>(
-                Colors.white.withValues(alpha: 0.8),
+                Colors.white.withOpacity(0.8),
               ),
             ),
           ),
@@ -285,7 +285,7 @@ class _SplashScreenState extends State<SplashScreen>
           child: CircularProgressIndicator(
             strokeWidth: 2,
             valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.white.withValues(alpha: 0.8),
+              Colors.white.withOpacity(0.8),
             ),
           ),
         ),
@@ -299,10 +299,10 @@ class _SplashScreenState extends State<SplashScreen>
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.5.h),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white.withOpacity(0.3),
             width: 1,
           ),
         ),

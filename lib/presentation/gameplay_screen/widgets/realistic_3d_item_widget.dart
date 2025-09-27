@@ -218,8 +218,7 @@ class _Realistic3DItemWidgetState extends State<Realistic3DItemWidget>
               ),
               childWhenDragging: _build3DContainer(
                 emoji: emoji,
-                color: Colors.grey.withValues(
-                    alpha: widget.enableTutorialMode
+                color: Colors.grey.withOpacity(widget.enableTutorialMode
                         ? 0.7
                         : 0.3), // More visible in tutorial
                 size: itemSize,
@@ -279,34 +278,33 @@ class _Realistic3DItemWidgetState extends State<Realistic3DItemWidget>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  color.withValues(alpha: 0.9),
+                  color.withOpacity(0.9),
                   color,
-                  color.withValues(
-                    red: (color.red * 0.8).clamp(0, 255),
-                    green: (color.green * 0.8).clamp(0, 255),
-                    blue: (color.blue * 0.8).clamp(0, 255),
+                  Color.fromARGB(
+                    color.alpha,
+                    (color.red * 0.8).clamp(0, 255).toInt(),
+                    (color.green * 0.8).clamp(0, 255).toInt(),
+                    (color.blue * 0.8).clamp(0, 255).toInt(),
                   ),
                 ],
               ),
-        color: isGhost ? Colors.grey.withValues(alpha: 0.3) : null,
+        color: isGhost ? Colors.grey.withOpacity(0.3) : null,
         border: isGhost
             ? Border.all(
-                color: Colors.grey.withValues(alpha: 0.5),
+                color: Colors.grey.withOpacity(0.5),
                 width: 2,
                 style: BorderStyle.solid,
               )
             : (widget.enableTutorialMode && !isGhost
                 ? Border.all(
-                    color: Colors.yellow.withValues(alpha: 0.6),
+                    color: Colors.yellow.withOpacity(0.6),
                     width: 2,
                   )
                 : null),
         boxShadow: [
           // Enhanced main shadow for tutorial mode
           BoxShadow(
-            color: Colors.black.withValues(
-                alpha:
-                    shadowIntensity * (widget.enableTutorialMode ? 0.4 : 0.3)),
+            color: Colors.black.withOpacity(shadowIntensity * (widget.enableTutorialMode ? 0.4 : 0.3)),
             blurRadius: isDragging ? 25 : (widget.enableTutorialMode ? 15 : 12),
             offset: Offset(
                 0, isDragging ? 10 : (widget.enableTutorialMode ? 8 : 6)),
@@ -315,7 +313,7 @@ class _Realistic3DItemWidgetState extends State<Realistic3DItemWidget>
           // Colored shadow for 3D effect
           if (!isGhost)
             BoxShadow(
-              color: color.withValues(alpha: shadowIntensity * 0.4),
+              color: color.withOpacity(shadowIntensity * 0.4),
               blurRadius: isDragging ? 18 : 10,
               offset: Offset(0, isDragging ? 8 : 5),
               spreadRadius: -2,
@@ -323,7 +321,7 @@ class _Realistic3DItemWidgetState extends State<Realistic3DItemWidget>
           // Tutorial mode glow effect
           if (widget.enableTutorialMode && !isGhost)
             BoxShadow(
-              color: Colors.yellow.withValues(alpha: 0.3),
+              color: Colors.yellow.withOpacity(0.3),
               blurRadius: 20,
               offset: const Offset(0, 0),
               spreadRadius: 2,
@@ -333,7 +331,7 @@ class _Realistic3DItemWidgetState extends State<Realistic3DItemWidget>
               !isGhost &&
               !widget.enableTutorialMode)
             BoxShadow(
-              color: color.withValues(alpha: _glowAnimation.value * 0.5),
+              color: color.withOpacity(_glowAnimation.value * 0.5),
               blurRadius: 25,
               offset: const Offset(0, 0),
               spreadRadius: 3,
@@ -351,9 +349,9 @@ class _Realistic3DItemWidgetState extends State<Realistic3DItemWidget>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withValues(alpha: 0.2),
+                    Colors.white.withOpacity(0.2),
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.1),
+                    Colors.black.withOpacity(0.1),
                   ],
                 ),
               ),
@@ -370,14 +368,14 @@ class _Realistic3DItemWidgetState extends State<Realistic3DItemWidget>
                       (widget.enableTutorialMode ? 1.1 : 1.0),
                   shadows: [
                     Shadow(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: Colors.black.withOpacity(0.3),
                       offset: const Offset(1, 1),
                       blurRadius: 2,
                     ),
                     // Extra shadow for tutorial mode
                     if (widget.enableTutorialMode)
                       Shadow(
-                        color: Colors.yellow.withValues(alpha: 0.5),
+                        color: Colors.yellow.withOpacity(0.5),
                         offset: const Offset(0, 0),
                         blurRadius: 8,
                       ),
@@ -401,8 +399,7 @@ class _Realistic3DItemWidgetState extends State<Realistic3DItemWidget>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withValues(
-                          alpha: widget.enableTutorialMode ? 0.6 : 0.4),
+                      Colors.white.withOpacity(widget.enableTutorialMode ? 0.6 : 0.4),
                       Colors.transparent,
                     ],
                   ),

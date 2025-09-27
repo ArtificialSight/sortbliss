@@ -301,7 +301,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
               Text(
                 levelData["difficulty"],
                 style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Colors.white.withOpacity(0.8),
                 ),
               ),
             ],
@@ -311,7 +311,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
             child: Container(
               padding: EdgeInsets.all(2.w),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2.w),
               ),
               child: CustomIconWidget(
@@ -338,7 +338,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                 return Container(
                   height: 0.5.h,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: Colors.white.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(0.5.h),
                   ),
                   child: FractionallySizedBox(
@@ -375,11 +375,9 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppTheme.lightTheme.colorScheme.primary.withValues(
-                      alpha: 0.8 + (_backgroundAnimation.value * 0.2),
+                    AppTheme.lightTheme.colorScheme.primary.withOpacity(0.8 + (_backgroundAnimation.value * 0.2),
                     ),
-                    AppTheme.lightTheme.colorScheme.secondary.withValues(
-                      alpha: 0.6 + (_backgroundAnimation.value * 0.4),
+                    AppTheme.lightTheme.colorScheme.secondary.withOpacity(0.6 + (_backgroundAnimation.value * 0.4),
                     ),
                   ],
                 ),
@@ -390,7 +388,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                     // Background blur effect
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: Colors.black.withOpacity(0.3),
                       ),
                     ),
 
@@ -467,12 +465,12 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                                     decoration: BoxDecoration(
                                       color: AppTheme
                                           .lightTheme.colorScheme.tertiary
-                                          .withValues(alpha: 0.9),
+                                          .withOpacity(0.9),
                                       borderRadius: BorderRadius.circular(3.w),
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black
-                                              .withValues(alpha: 0.2),
+                                              .withOpacity(0.2),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -507,7 +505,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                                                     .textTheme.bodySmall
                                                     ?.copyWith(
                                                   color: Colors.white
-                                                      .withValues(alpha: 0.9),
+                                                      .withOpacity(0.9),
                                                 ),
                                               ),
                                             ],

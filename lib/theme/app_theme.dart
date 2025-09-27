@@ -58,7 +58,7 @@ class AppTheme {
       onSecondaryContainer: onSecondaryLight,
       tertiary: successLight,
       onTertiary: onPrimaryLight,
-      tertiaryContainer: successLight.withValues(alpha: 0.1),
+      tertiaryContainer: successLight.withOpacity(0.1),
       onTertiaryContainer: successLight,
       error: errorLight,
       onError: onErrorLight,
@@ -66,7 +66,7 @@ class AppTheme {
       onSurface: onSurfaceLight,
       onSurfaceVariant: textSecondaryLight,
       outline: dividerLight,
-      outlineVariant: dividerLight.withValues(alpha: 0.5),
+      outlineVariant: dividerLight.withOpacity(0.5),
       shadow: shadowLight,
       scrim: shadowLight,
       inverseSurface: surfaceDark,
@@ -74,7 +74,7 @@ class AppTheme {
       inversePrimary: primaryDark,
     ),
     scaffoldBackgroundColor: backgroundLight,
-    cardTheme: const CardThemeData(
+    cardTheme: const CardTheme(
       color: surfaceLight,
       elevation: 2,
       shadowColor: shadowLight,
@@ -115,7 +115,7 @@ class AppTheme {
       onSecondaryContainer: onSecondaryDark,
       tertiary: successDark,
       onTertiary: onPrimaryDark,
-      tertiaryContainer: successDark.withValues(alpha: 0.2),
+      tertiaryContainer: successDark.withOpacity(0.2),
       onTertiaryContainer: successDark,
       error: errorDark,
       onError: onErrorDark,
@@ -123,7 +123,7 @@ class AppTheme {
       onSurface: onSurfaceDark,
       onSurfaceVariant: textSecondaryDark,
       outline: dividerDark,
-      outlineVariant: dividerDark.withValues(alpha: 0.5),
+      outlineVariant: dividerDark.withOpacity(0.5),
       shadow: shadowDark,
       scrim: shadowDark,
       inverseSurface: surfaceLight,
@@ -131,7 +131,7 @@ class AppTheme {
       inversePrimary: primaryLight,
     ),
     scaffoldBackgroundColor: backgroundDark,
-    cardTheme: const CardThemeData(
+    cardTheme: const CardTheme(
       color: surfaceDark,
       elevation: 2,
       shadowColor: shadowDark,

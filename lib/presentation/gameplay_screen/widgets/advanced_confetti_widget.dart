@@ -162,7 +162,7 @@ class ConfettiPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (var particle in particles) {
       final paint = Paint()
-        ..color = particle.color.withValues(alpha: particle.opacity)
+        ..color = particle.color.withOpacity(particle.opacity)
         ..style = PaintingStyle.fill;
 
       canvas.save();

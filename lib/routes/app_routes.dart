@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../presentation/achievements/achievements_screen.dart';
 import '../presentation/daily_challenge/daily_challenge_screen.dart';
 import '../presentation/gameplay_screen/gameplay_screen.dart';
 import '../presentation/level_complete_screen/level_complete_screen.dart';
 import '../presentation/main_menu/main_menu.dart';
+import '../presentation/settings/settings_screen.dart';
 import '../presentation/splash_screen/splash_screen.dart';
 
 class AppRoutes {
@@ -13,6 +15,8 @@ class AppRoutes {
   static const String gameplay = '/gameplay-screen';
   static const String mainMenu = '/main-menu';
   static const String dailyChallenge = '/daily-challenge';
+  static const String achievements = '/achievements';
+  static const String settings = '/settings';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
@@ -20,6 +24,23 @@ class AppRoutes {
     levelComplete: (context) => const LevelCompleteScreen(),
     gameplay: (context) => const GameplayScreen(),
     mainMenu: (context) => const MainMenu(),
+    achievements: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is AchievementsScreenArgs) {
+        return AchievementsScreen(args: args);
+      }
+      return const AchievementsScreen(
+        args: AchievementsScreenArgs(
+          levelsCompleted: 0,
+          currentStreak: 0,
+          coinsEarned: 0,
+          unlockedAchievements: [],
+          shareCount: 0,
+          audioCustomized: false,
+        ),
+      );
+    },
+    settings: (context) => const SettingsScreen(),
     dailyChallenge: (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is DailyChallengeScreenArgs) {

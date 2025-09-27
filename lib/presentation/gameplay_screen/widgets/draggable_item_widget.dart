@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-
 import '../../../core/app_export.dart';
 import '../../../theme/app_theme.dart';
 
@@ -59,6 +58,13 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
 
   @override
   Widget build(BuildContext context) {
+    // Extract opacity values to descriptive variables
+    const double feedbackShadowOpacity = 0.4;
+    const double placeholderOpacity = 0.3;
+    const double placeholderBorderOpacity = 0.5;
+    const double placeholderTextOpacity = 0.6;
+    const double itemShadowOpacity = 0.2;
+    
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
@@ -89,7 +95,7 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.4),
+                      color: Colors.black.withOpacity(feedbackShadowOpacity),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -110,10 +116,10 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
               width: 12.w,
               height: 12.w,
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
+                color: Colors.grey.withOpacity(placeholderOpacity),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.grey.withValues(alpha: 0.5),
+                  color: Colors.grey.withOpacity(placeholderBorderOpacity),
                   width: 2,
                   style: BorderStyle.solid,
                 ),
@@ -122,7 +128,7 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
                 child: Text(
                   widget.item['shape'] as String,
                   style: AppTheme.lightTheme.textTheme.labelMedium?.copyWith(
-                    color: Colors.grey.withValues(alpha: 0.6),
+                    color: Colors.grey.withOpacity(placeholderTextOpacity),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -148,7 +154,7 @@ class _DraggableItemWidgetState extends State<DraggableItemWidget>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withOpacity(itemShadowOpacity),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                     ),

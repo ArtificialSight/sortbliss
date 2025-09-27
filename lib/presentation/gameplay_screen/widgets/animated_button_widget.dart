@@ -198,20 +198,20 @@ class _AnimatedButtonWidgetState extends State<AnimatedButtonWidget>
                 boxShadow: widget.isEnabled
                     ? [
                         BoxShadow(
-                          color: _getButtonColor().withValues(alpha: 0.3),
+                          color: _getButtonColor().withOpacity(0.3),
                           blurRadius: _isPressed ? 8 : 15,
                           offset: Offset(0, _isPressed ? 2 : 8),
                         ),
                         if (!_isPressed)
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: Colors.black.withOpacity(0.1),
                             blurRadius: 5,
                             offset: const Offset(0, 2),
                           ),
                       ]
                     : null,
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                   width: 1,
                 ),
               ),
