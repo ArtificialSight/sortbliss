@@ -1,9 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../analytics/analytics_logger.dart';
 
 /// Product identifiers used across the storefront and entitlement system.
@@ -13,7 +11,6 @@ class MonetizationProducts {
   static const coinPackLarge = 'sortbliss_coin_pack_large';
   static const coinPackEpic = 'sortbliss_coin_pack_epic';
   static const sortPass = 'sortbliss_sort_pass_premium';
-
   static const entitlementRemoveAds = 'entitlement_remove_ads';
   static const entitlementSortPass = 'entitlement_sort_pass';
 
@@ -41,26 +38,25 @@ class MonetizationProducts {
 /// balance used throughout the game.
 class MonetizationManager extends ChangeNotifier {
   MonetizationManager._();
-
   static final MonetizationManager instance = MonetizationManager._();
 
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   bool _initialized = false;
   bool _available = false;
-
   final Map<String, ProductDetails> _products = {};
   final Set<String> _entitlements = <String>{};
   late SharedPreferences _preferences;
 
-  final ValueNotifier<int> coinBalance = ValueNotifier<int>(2850);
+  // Named constant for default coin balance to replace magic number
+  static const int _defaultCoinBalance = 2850;
+  final ValueNotifier<int> coinBalance = ValueNotifier<int>(_defaultCoinBalance);
 
   bool get isAvailable => _available;
   bool get isAdFree =>
       _entitlements.contains(MonetizationProducts.entitlementRemoveAds);
   bool get hasSortPass =>
       _entitlements.contains(MonetizationProducts.entitlementSortPass);
-
   Map<String, ProductDetails> get products => Map.unmodifiable(_products);
 
   Future<void> initialize() async {
@@ -87,6 +83,7 @@ class MonetizationManager extends ChangeNotifier {
     for (final details in response.productDetails) {
       _products[details.id] = details;
     }
+
     notifyListeners();
 
     _subscription = _iap.purchaseStream.listen(_handlePurchaseUpdates,
@@ -113,6 +110,7 @@ class MonetizationManager extends ChangeNotifier {
     }
 
     final purchaseParam = PurchaseParam(productDetails: product);
+
     AnalyticsLogger.logEvent('iap_purchase_initiated',
         parameters: {'productId': productId});
 
@@ -193,6 +191,7 @@ class MonetizationManager extends ChangeNotifier {
 
   Future<void> _deliverProduct(PurchaseDetails purchaseDetails) async {
     final productId = purchaseDetails.productID;
+
     AnalyticsLogger.logEvent('iap_purchase_delivered',
         parameters: {'productId': productId});
 
