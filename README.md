@@ -197,6 +197,87 @@ flutter pub get
 flutter run
 ```
 
+## 🔐 Secure configuration & secret handling
+
+This project follows the [vpnsecurity.blog](https://vpnsecurity.blog/) guidance
+for mobile secret management: secrets live on the server, the client only
+receives short-lived tokens, and environment variables are injected at build
+time.
+
+### Local development
+
+1. Duplicate the sample environment file and populate it with the tokens that
+   are safe to expose to the client (short-lived session tokens only):
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Request temporary session tokens from your Supabase Edge Function (see the
+   next section). These values should **never** be committed – they expire and
+   are refreshed automatically by the app at runtime.
+
+3. Run the app. `flutter_dotenv` will hydrate configuration from `.env` while
+   keeping the file outside of version control:
+
+   ```bash
+   flutter run
+   ```
+
+### CI / production builds
+
+- Provide configuration using `--dart-define` so secrets are injected by the CI
+  environment rather than embedded in the source tree:
+
+  ```bash
+  flutter build apk \
+    --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+    --dart-define=SUPABASE_FUNCTIONS_URL=https://your-project.functions.supabase.co
+  ```
+
+- Use your secrets manager (e.g. GitHub Actions secrets, Vercel env vars) to
+  provide the Supabase session token that will be exchanged for short-lived
+  provider tokens during runtime.
+
+### Supabase Edge Function guardrail
+
+Store provider API keys (OpenAI, Gemini, Anthropic, Perplexity, etc.) inside a
+Supabase Edge Function. The function verifies the caller session and returns an
+ephemeral token that expires in minutes:
+
+```ts
+// supabase/functions/issue-openai-token/index.ts
+import { createClient } from "@supabase/supabase-js";
+
+export const issueOpenAiToken = async (req: Request) => {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    global: { headers: { Authorization: req.headers.get("Authorization")! } },
+  });
+
+  const { data: session, error } = await supabase.auth.getUser();
+  if (error || !session) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  // Issue a token stored server-side; never send the provider API key itself.
+  const token = await createShortLivedToken({ ttlSeconds: 300 });
+  return Response.json({ token, expiresIn: 300 });
+};
+```
+
+### Client integration
+
+- `Environment.bootstrap()` loads `.env` locally and supports `--dart-define`
+  overrides for automated pipelines.
+- `SecureSupabaseClient` exchanges the Supabase session for a short-lived token
+  from the Edge Function, enforcing authenticated requests.
+- `AuthenticatedHttpClient` wraps Dio to guarantee every outbound provider call
+  includes the freshly minted token, blocking unauthenticated access paths.
+
+When the session expires, the Supabase client refreshes it and the application
+requests a new provider token. No long-lived secrets ever ship in the mobile
+binary.
+
 ## 📁 Project Structure
 
 ```

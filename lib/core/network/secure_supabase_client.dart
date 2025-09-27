@@ -4,15 +4,18 @@ import '../config/environment.dart';
 
 class TokenExchangeException implements Exception {
   const TokenExchangeException(this.message);
+  
   final String message;
+
   @override
   String toString() => 'TokenExchangeException: $message';
 }
 
-/// Proxy for interacting with Supabase Edge Functions that mint short-lived
-/// service tokens for provider APIs (OpenAI, etc.).
+/// Provides a hardened proxy for interacting with Supabase Edge Functions that
+/// mint short-lived service tokens.
 class SecureSupabaseClient {
   SecureSupabaseClient({Dio? httpClient}) : _httpClient = httpClient ?? Dio();
+
   final Dio _httpClient;
 
   Future<String> fetchServiceToken({
@@ -26,26 +29,35 @@ class SecureSupabaseClient {
     final baseUrl = Environment.supabaseFunctionsUrl;
     if (baseUrl.isEmpty) {
       throw const TokenExchangeException(
-        'SUPABASE_FUNCTIONS_URL missing. Provide via --dart-define or .env.',
+        'SUPABASE_FUNCTIONS_URL is not configured. Provide it via --dart-define or .env.',
       );
     }
 
     final response = await _httpClient.post<Map<String, dynamic>>(
       '$baseUrl/functions/v1/$edgeFunction',
-      options: Options(headers: {
-        'Authorization': 'Bearer $sessionToken',
-      }),
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $sessionToken',
+        },
+      ),
     );
 
-    final data = response.data ?? const <String, dynamic>{};
-    final token = data['token'] as String? ?? '';
-    final expires = data['expiresIn'] as int?;
+    final payload = response.data ?? const <String, dynamic>{};
+    final token = payload['token'] as String? ?? '';
+    final expiresIn = payload['expiresIn'] as int?;
+
     if (token.isEmpty) {
-      throw const TokenExchangeException('Edge function response missing token');
+      throw const TokenExchangeException(
+        'Edge function response did not include a token.',
+      );
     }
-    if (expires == null || expires <= 0) {
-      throw const TokenExchangeException('Invalid expiresIn in edge response');
+
+    if (expiresIn == null || expiresIn <= 0) {
+      throw const TokenExchangeException(
+        'Edge function response must include a positive expiresIn value.',
+      );
     }
+
     return token;
   }
 }
