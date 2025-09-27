@@ -87,6 +87,7 @@ class _GameplayScreenState extends State<GameplayScreen>
   int _perfectLevelsCount = 0;
   int _totalGameScore = 12500;
   double _userSpeed = 1.0;
+  DateTime? _lastMoveTimestamp;
   List<String> _completedTutorialActions = [];
   String _currentTheme = 'default';
 
@@ -199,6 +200,7 @@ class _GameplayScreenState extends State<GameplayScreen>
       _showParticleEffect = false;
       _highlightedContainerId = null;
       _draggedItemId = null;
+      _lastMoveTimestamp = null;
 
       // Reset containers
       for (var container in _gameContainers) {
@@ -517,11 +519,27 @@ class _GameplayScreenState extends State<GameplayScreen>
   final GlobalKey _tutorialWidgetKey = GlobalKey();
 
   void _updateUserSpeed() {
-    final expectedTime = _maxMoves * 2.0; // 2 seconds per move expected
-    final actualTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
-    // Calculate based on move efficiency
+    const double expectedMoveDurationSeconds = 2.0;
+    const double smoothingFactor = 0.1;
+    const double defaultSpeed = 1.0;
+
+    final now = DateTime.now();
+    final previousTimestamp = _lastMoveTimestamp;
+
+    double measuredSpeed = defaultSpeed;
+    if (previousTimestamp != null) {
+      final elapsedMilliseconds = now.difference(previousTimestamp).inMilliseconds;
+      final elapsedSeconds = elapsedMilliseconds / 1000.0;
+      if (elapsedSeconds > 0) {
+        measuredSpeed = expectedMoveDurationSeconds / elapsedSeconds;
+      }
+    }
+
+    measuredSpeed = math.max(0.1, measuredSpeed);
+
     _userSpeed =
-        (expectedTime / math.max(1.0, actualTime)) * 0.1 + _userSpeed * 0.9;
+        measuredSpeed * smoothingFactor + _userSpeed * (1 - smoothingFactor);
+    _lastMoveTimestamp = now;
   }
 
   void _showSuccessEffects(Map<String, dynamic> item) {
