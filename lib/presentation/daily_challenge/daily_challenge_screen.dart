@@ -245,7 +245,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: Colors.black.withOpacity(0.08),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -356,7 +356,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: colorScheme.primary.withValues(alpha: 0.1)),
+                  border: Border.all(color: colorScheme.primary.withOpacity(0.1)),
                 ),
                 child: _buildWeeklySection(),
               ),

@@ -12,6 +12,7 @@ class HypercasualHudWidget extends StatefulWidget {
   final Duration? gameTimer;
   final bool showTimer;
   final VoidCallback? onTimerComplete;
+  final int score;
 
   const HypercasualHudWidget({
     Key? key,
@@ -20,6 +21,7 @@ class HypercasualHudWidget extends StatefulWidget {
     this.gameTimer,
     this.showTimer = true,
     this.onTimerComplete,
+    this.score = 0,
   }) : super(key: key);
 
   @override
@@ -28,7 +30,7 @@ class HypercasualHudWidget extends StatefulWidget {
 
 class _HypercasualHudWidgetState extends State<HypercasualHudWidget>
     with TickerProviderStateMixin {
-  late Timer _gameTimer;
+  Timer? _gameTimer;
   Duration _currentTime = const Duration(minutes: 15); // Default 15 minutes
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -75,7 +77,7 @@ class _HypercasualHudWidgetState extends State<HypercasualHudWidget>
 
   @override
   void dispose() {
-    _gameTimer.cancel();
+    _gameTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -104,20 +106,25 @@ class _HypercasualHudWidgetState extends State<HypercasualHudWidget>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: 0.8),
-            Colors.black.withValues(alpha: 0.4),
+            Colors.black.withOpacity(0.8),
+            Colors.black.withOpacity(0.4),
             Colors.transparent,
           ],
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Level indicator - left side
           _buildLevelIndicator(),
+          const Spacer(),
 
           // Timer - center
           if (widget.showTimer) _buildGameTimer(isLowTime),
+          if (widget.showTimer) SizedBox(width: 3.w),
+
+          _buildScoreBadge(),
+          SizedBox(width: 3.w),
 
           // Pause button - right side
           _buildPauseButton(),
@@ -138,14 +145,14 @@ class _HypercasualHudWidgetState extends State<HypercasualHudWidget>
               gradient: LinearGradient(
                 colors: [
                   AppTheme.lightTheme.primaryColor,
-                  AppTheme.lightTheme.primaryColor.withValues(alpha: 0.8),
+                  AppTheme.lightTheme.primaryColor.withOpacity(0.8),
                 ],
               ),
               borderRadius: BorderRadius.circular(25),
               boxShadow: [
                 BoxShadow(
                   color:
-                      AppTheme.lightTheme.primaryColor.withValues(alpha: 0.3),
+                      AppTheme.lightTheme.primaryColor.withOpacity(0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 4),
                   spreadRadius: 1,
@@ -188,19 +195,19 @@ class _HypercasualHudWidgetState extends State<HypercasualHudWidget>
             padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.5.h),
             decoration: BoxDecoration(
               color: isLowTime
-                  ? Colors.red.withValues(alpha: 0.9)
-                  : Colors.black.withValues(alpha: 0.7),
+                  ? Colors.red.withOpacity(0.9)
+                  : Colors.black.withOpacity(0.7),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
                 color: isLowTime
                     ? Colors.red.shade300
-                    : Colors.white.withValues(alpha: 0.3),
+                    : Colors.white.withOpacity(0.3),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
                   color: (isLowTime ? Colors.red : Colors.black)
-                      .withValues(alpha: 0.4),
+                      .withOpacity(0.4),
                   blurRadius: isLowTime ? 20 : 10,
                   offset: const Offset(0, 4),
                   spreadRadius: isLowTime ? 2 : 0,
@@ -234,6 +241,60 @@ class _HypercasualHudWidgetState extends State<HypercasualHudWidget>
     );
   }
 
+  Widget _buildScoreBadge() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.2.h),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.65),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.35),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CustomIconWidget(
+            iconName: 'bolt',
+            color: Colors.yellow.shade400,
+            size: 4.5.w,
+          ),
+          SizedBox(width: 2.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'SCORE',
+                style: AppTheme.lightTheme.textTheme.labelSmall?.copyWith(
+                  color: Colors.white.withOpacity(0.75),
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                widget.score.toString(),
+                style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 3.8.w,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPauseButton() {
     return GestureDetector(
       onTap: widget.onPausePressed,
@@ -246,18 +307,18 @@ class _HypercasualHudWidgetState extends State<HypercasualHudWidget>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.white.withValues(alpha: 0.9),
-              Colors.white.withValues(alpha: 0.7),
+              Colors.white.withOpacity(0.9),
+              Colors.white.withOpacity(0.7),
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withOpacity(0.2),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -277,7 +338,7 @@ class _HypercasualHudWidgetState extends State<HypercasualHudWidget>
         )
         .shimmer(
           duration: 3000.ms,
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.white.withOpacity(0.1),
         );
   }
 }

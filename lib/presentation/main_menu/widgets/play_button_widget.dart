@@ -82,7 +82,7 @@ class _PlayButtonWidgetState extends State<PlayButtonWidget>
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.lightTheme.colorScheme.primary
-                        .withValues(alpha: 0.4),
+                        .withOpacity(0.4),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),

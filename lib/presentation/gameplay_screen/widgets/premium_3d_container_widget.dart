@@ -395,9 +395,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                           color: (widget.isHighlighted || _isDraggedOver)
                               ? _getThemeAccentColor()
                               : (widget.enableTutorialMode
-                                  ? Colors.yellow.withValues(
-                                      alpha:
-                                          0.9) // Brighter border for tutorial
+                                  ? Colors.yellow.withOpacity(0.9) // Brighter border for tutorial
                                   : Colors.transparent),
                           width: (widget.isHighlighted || _isDraggedOver)
                               ? 4 // Thicker highlight border
@@ -408,8 +406,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                         boxShadow: [
                           // CRITICAL FIX: Enhanced shadow for tutorial visibility
                           BoxShadow(
-                            color: _getThemeAccentColor().withValues(
-                                alpha: widget.enableTutorialMode
+                            color: _getThemeAccentColor().withOpacity(widget.enableTutorialMode
                                     ? 0.7 // Much stronger shadow
                                     : 0.3),
                             blurRadius: (widget.isHighlighted || isActive)
@@ -423,8 +420,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                           // CRITICAL FIX: Enhanced tutorial mode highlight
                           if (widget.enableTutorialMode)
                             BoxShadow(
-                              color: Colors.yellow.withValues(
-                                  alpha: 0.6), // Much stronger yellow glow
+                              color: Colors.yellow.withOpacity(0.6), // Much stronger yellow glow
                               blurRadius: 35,
                               offset: const Offset(0, 0),
                               spreadRadius: 6,
@@ -433,7 +429,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                           if (isActive && widget.enableTutorialMode)
                             BoxShadow(
                               color: Colors.green
-                                  .withValues(alpha: 0.8), // Maximum feedback
+                                  .withOpacity(0.8), // Maximum feedback
                               blurRadius: 30,
                               offset: const Offset(0, 0),
                               spreadRadius: 5,
@@ -442,8 +438,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                           if ((widget.isHighlighted || _isDraggedOver) &&
                               !widget.enableTutorialMode)
                             BoxShadow(
-                              color: _getThemeAccentColor().withValues(
-                                alpha: 0.5 * _glowAnimation.value,
+                              color: _getThemeAccentColor().withOpacity(0.5 * _glowAnimation.value,
                               ),
                               blurRadius: 30,
                               offset: const Offset(0, 0),
@@ -452,8 +447,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                           // Enhanced tutorial mode highlight
                           if (widget.enableTutorialMode)
                             BoxShadow(
-                              color: Colors.yellow.withValues(
-                                  alpha: 0.4), // Stronger yellow glow
+                              color: Colors.yellow.withOpacity(0.4), // Stronger yellow glow
                               blurRadius: 30,
                               offset: const Offset(0, 0),
                               spreadRadius: 4,
@@ -462,14 +456,14 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                           if (isActive && widget.enableTutorialMode)
                             BoxShadow(
                               color: Colors.green
-                                  .withValues(alpha: 0.6), // Stronger feedback
+                                  .withOpacity(0.6), // Stronger feedback
                               blurRadius: 25,
                               offset: const Offset(0, 0),
                               spreadRadius: 3,
                             ),
                           if (isActive && !widget.enableTutorialMode)
                             BoxShadow(
-                              color: Colors.green.withValues(alpha: 0.4),
+                              color: Colors.green.withOpacity(0.4),
                               blurRadius: 20,
                               offset: const Offset(0, 0),
                               spreadRadius: 2,
@@ -530,35 +524,33 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
     switch (_containerTheme) {
       case 'crystal':
         return [
-          Colors.cyan.shade100.withValues(alpha: 0.9),
-          Colors.blue.shade200.withValues(alpha: 0.8),
-          Colors.purple.shade100.withValues(alpha: 0.7),
+          Colors.cyan.shade100.withOpacity(0.9),
+          Colors.blue.shade200.withOpacity(0.8),
+          Colors.purple.shade100.withOpacity(0.7),
         ];
       case 'neon':
         return [
-          Colors.purple.shade400.withValues(alpha: 0.9),
-          Colors.pink.shade300.withValues(alpha: 0.8),
-          Colors.blue.shade400.withValues(alpha: 0.7),
+          Colors.purple.shade400.withOpacity(0.9),
+          Colors.pink.shade300.withOpacity(0.8),
+          Colors.blue.shade400.withOpacity(0.7),
         ];
       case 'golden':
         return [
-          Colors.amber.shade300.withValues(alpha: 0.9),
-          Colors.orange.shade200.withValues(alpha: 0.8),
-          Colors.yellow.shade100.withValues(alpha: 0.7),
+          Colors.amber.shade300.withOpacity(0.9),
+          Colors.orange.shade200.withOpacity(0.8),
+          Colors.yellow.shade100.withOpacity(0.7),
         ];
       case 'metallic':
         return [
-          Colors.grey.shade300.withValues(alpha: 0.9),
-          Colors.blueGrey.shade200.withValues(alpha: 0.8),
-          Colors.grey.shade100.withValues(alpha: 0.7),
+          Colors.grey.shade300.withOpacity(0.9),
+          Colors.blueGrey.shade200.withOpacity(0.8),
+          Colors.grey.shade100.withOpacity(0.7),
         ];
       default:
         return [
-          Color(originalColors[0]).withValues(
-            alpha: (_isDraggedOver || widget.isHighlighted) ? 0.95 : 0.8,
+          Color(originalColors[0]).withOpacity((_isDraggedOver || widget.isHighlighted) ? 0.95 : 0.8,
           ),
-          Color(originalColors[1]).withValues(
-            alpha: (_isDraggedOver || widget.isHighlighted) ? 0.9 : 0.7,
+          Color(originalColors[1]).withOpacity((_isDraggedOver || widget.isHighlighted) ? 0.9 : 0.7,
           ),
         ];
     }
@@ -580,13 +572,13 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                _getThemeAccentColor().withValues(alpha: 0.8),
-                _getThemeAccentColor().withValues(alpha: 0.6),
+                _getThemeAccentColor().withOpacity(0.8),
+                _getThemeAccentColor().withOpacity(0.6),
               ],
             ),
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: Colors.white.withOpacity(0.3),
                 width: 2,
               ),
             ),
@@ -602,7 +594,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                   ),
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withValues(alpha: 0.2),
+                      Colors.white.withOpacity(0.2),
                       Colors.transparent,
                     ],
                   ),
@@ -629,7 +621,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                         fontWeight: FontWeight.w800,
                         shadows: [
                           Shadow(
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: Colors.black.withOpacity(0.5),
                             offset: const Offset(2, 2),
                             blurRadius: 4,
                           ),
@@ -643,7 +635,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                         padding: EdgeInsets.symmetric(
                             horizontal: 1.5.w, vertical: 0.5.h),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -675,9 +667,9 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.white.withValues(alpha: 0.15),
+                  Colors.white.withOpacity(0.15),
                   Colors.transparent,
-                  Colors.black.withValues(alpha: 0.1),
+                  Colors.black.withOpacity(0.1),
                 ],
               ),
             ),
@@ -714,13 +706,13 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    _getThemeAccentColor().withValues(alpha: 0.9),
-                    _getThemeAccentColor().withValues(alpha: 0.7),
+                    _getThemeAccentColor().withOpacity(0.9),
+                    _getThemeAccentColor().withOpacity(0.7),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black.withOpacity(0.3),
                     blurRadius: 10,
                     offset: Offset(0, _lidAnimation.value * 10),
                   ),
@@ -734,7 +726,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                   ),
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withValues(alpha: 0.3),
+                      Colors.white.withOpacity(0.3),
                       Colors.transparent,
                     ],
                   ),
@@ -742,7 +734,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                 child: Center(
                   child: Icon(
                     Icons.keyboard_arrow_down,
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: Colors.white.withOpacity(0.8),
                     size: 8.w,
                   ),
                 ),
@@ -780,8 +772,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
               borderRadius: BorderRadius.circular(20),
               gradient: RadialGradient(
                 colors: [
-                  Colors.green.withValues(
-                      alpha: 0.3 * (1.0 - _particleController.value)),
+                  Colors.green.withOpacity(0.3 * (1.0 - _particleController.value)),
                   Colors.transparent,
                 ],
               ),
@@ -790,7 +781,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
               child: Icon(
                 Icons.check_circle,
                 color: Colors.green
-                    .withValues(alpha: 1.0 - _particleController.value),
+                    .withOpacity(1.0 - _particleController.value),
                 size: 20.w * _particleController.value,
               ),
             ),
@@ -823,13 +814,13 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.green.withValues(alpha: 0.7),
+                color: Colors.green.withOpacity(0.7),
                 blurRadius: 20,
                 offset: const Offset(0, 5),
                 spreadRadius: 3,
               ),
               BoxShadow(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: Colors.white.withOpacity(0.5),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
                 spreadRadius: 1,
@@ -854,7 +845,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                   letterSpacing: 1.2,
                   shadows: [
                     Shadow(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: Colors.black.withOpacity(0.5),
                       offset: const Offset(2, 2),
                       blurRadius: 4,
                     ),
@@ -874,7 +865,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
           .then()
           .shimmer(
             duration: 1000.ms,
-            color: Colors.white.withValues(alpha: 0.5),
+            color: Colors.white.withOpacity(0.5),
           )
           .then(delay: 500.ms)
           .shake(hz: 2, curve: Curves.easeInOut),
@@ -895,8 +886,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                 center: Alignment.center,
                 radius: 0.8,
                 colors: [
-                  _getThemeAccentColor().withValues(
-                    alpha: 0.1 * _glowAnimation.value,
+                  _getThemeAccentColor().withOpacity(0.1 * _glowAnimation.value,
                   ),
                   Colors.transparent,
                 ],
@@ -924,18 +914,18 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      _getThemeAccentColor().withValues(alpha: 0.4),
-                      _getThemeAccentColor().withValues(alpha: 0.1),
+                      _getThemeAccentColor().withOpacity(0.4),
+                      _getThemeAccentColor().withOpacity(0.1),
                     ],
                   ),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: Colors.white.withOpacity(0.6),
                     width: 3,
                   ),
                 ),
                 child: Icon(
                   Icons.add_circle_outline,
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: Colors.white.withOpacity(0.9),
                   size: 8.w,
                 ),
               ),
@@ -946,7 +936,7 @@ class _Premium3DContainerWidgetState extends State<Premium3DContainerWidget>
         Text(
           description,
           style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-            color: Colors.white.withValues(alpha: 0.9),
+            color: Colors.white.withOpacity(0.9),
             fontWeight: FontWeight.w600,
           ),
           textAlign: TextAlign.center,
@@ -1005,7 +995,7 @@ class SuccessParticlesPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withValues(alpha: 1.0 - animation.value)
+      ..color = color.withOpacity(1.0 - animation.value)
       ..style = PaintingStyle.fill;
 
     final center = Offset(size.width / 2, size.height / 2);

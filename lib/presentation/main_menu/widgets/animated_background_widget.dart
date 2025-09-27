@@ -66,7 +66,7 @@ class _AnimatedBackgroundWidgetState extends State<AnimatedBackgroundWidget>
               end: Alignment.bottomRight,
               colors: [
                 AppTheme.lightTheme.scaffoldBackgroundColor,
-                AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.05),
+                AppTheme.lightTheme.colorScheme.primary.withOpacity(0.05),
               ],
             ),
           ),
@@ -84,7 +84,7 @@ class _AnimatedBackgroundWidgetState extends State<AnimatedBackgroundWidget>
                   height: 15.w,
                   decoration: BoxDecoration(
                     color: AppTheme.lightTheme.colorScheme.primary
-                        .withValues(alpha: 0.1),
+                        .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -105,7 +105,7 @@ class _AnimatedBackgroundWidgetState extends State<AnimatedBackgroundWidget>
                   height: 12.w,
                   decoration: BoxDecoration(
                     color: AppTheme.lightTheme.colorScheme.secondary
-                        .withValues(alpha: 0.1),
+                        .withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -126,7 +126,7 @@ class _AnimatedBackgroundWidgetState extends State<AnimatedBackgroundWidget>
                   height: 10.w,
                   decoration: BoxDecoration(
                     color: AppTheme.lightTheme.colorScheme.tertiary
-                        .withValues(alpha: 0.1),
+                        .withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),

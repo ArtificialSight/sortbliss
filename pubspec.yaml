@@ -15,6 +15,7 @@ dependencies:
   flutter_svg: ^2.0.9        # Required for SVG icon support
   google_fonts: ^6.1.0       # Required for typography (replaces local fonts)
   shared_preferences: ^2.5.3 # Required for local data storage - updated for persistent storage of user preferences and settings
+  share_plus: ^7.2.1         # Social sharing utilities for progress sharing and referrals
   web: ^1.1.1
   flutter_dotenv: ^5.1.0     # Secure runtime configuration loading
   

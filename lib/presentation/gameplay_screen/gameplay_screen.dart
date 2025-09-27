@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -38,6 +39,12 @@ class _GameplayScreenState extends State<GameplayScreen>
   int _moveCount = 0;
   int _maxMoves = 15;
   int _score = 0;
+  int _lastPlacementPoints = 0;
+  int _comboStreak = 0;
+  DateTime? _lastCorrectDropTime;
+  Timer? _comboResetTimer;
+  bool _showComboIndicator = false;
+  String _comboText = '';
   bool _isLevelComplete = false;
   bool _showParticleEffect = false;
   String? _highlightedContainerId;
@@ -193,12 +200,20 @@ class _GameplayScreenState extends State<GameplayScreen>
   }
 
   void _initializeLevel() {
+    _comboResetTimer?.cancel();
+    _comboResetTimer = null;
     setState(() {
       _moveCount = 0;
       _isLevelComplete = false;
       _showParticleEffect = false;
       _highlightedContainerId = null;
       _draggedItemId = null;
+      _score = 0;
+      _lastPlacementPoints = 0;
+      _comboStreak = 0;
+      _lastCorrectDropTime = null;
+      _showComboIndicator = false;
+      _comboText = '';
 
       // Reset containers
       for (var container in _gameContainers) {
@@ -316,6 +331,7 @@ class _GameplayScreenState extends State<GameplayScreen>
     if (isCorrectPlacement) {
       _premiumAudioManager.playSpatialContainerSound(containerId, 'success');
       _hapticManager.successImpact();
+      _handleCorrectPlacement();
       _showSuccessEffects(item);
       _checkForAchievements();
       _gestureController.announceGameEvent('correct_placement');
@@ -326,9 +342,52 @@ class _GameplayScreenState extends State<GameplayScreen>
       _premiumAudioManager.playContextualErrorSound(containerId);
       _hapticManager.errorFeedback();
       _gestureController.announceGameEvent('incorrect_placement');
+      _comboResetTimer?.cancel();
+      _comboResetTimer = null;
+      setState(() {
+        _clearComboState();
+      });
     }
 
     _checkLevelComplete();
+  }
+
+  void _handleCorrectPlacement() {
+    final now = DateTime.now();
+    final isCombo =
+        _lastCorrectDropTime != null && now.difference(_lastCorrectDropTime!).inMilliseconds <= 2500;
+    final nextStreak = isCombo ? _comboStreak + 1 : 1;
+    final multiplier = 1.0 + ((nextStreak - 1) * 0.25);
+    final earnedPoints = (100 * multiplier).round();
+
+    _comboResetTimer?.cancel();
+
+    setState(() {
+      _comboStreak = nextStreak;
+      _lastCorrectDropTime = now;
+      _score += earnedPoints;
+      _lastPlacementPoints = earnedPoints;
+      _showComboIndicator = nextStreak > 1;
+      _comboText = nextStreak > 1
+          ? 'x${multiplier % 1 == 0 ? multiplier.toStringAsFixed(0) : multiplier.toStringAsFixed(1)} Combo'
+          : '';
+    });
+
+    _comboResetTimer = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      setState(() {
+        _clearComboState();
+      });
+      _comboResetTimer = null;
+    });
+  }
+
+  void _clearComboState() {
+    _comboStreak = 0;
+    _lastCorrectDropTime = null;
+    _showComboIndicator = false;
+    _comboText = '';
+    _lastPlacementPoints = 0;
   }
 
   // New method to handle timer expiration
@@ -342,7 +401,7 @@ class _GameplayScreenState extends State<GameplayScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.black.withValues(alpha: 0.9),
+        backgroundColor: Colors.black.withOpacity(0.9),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Time's Up!",
@@ -354,7 +413,7 @@ class _GameplayScreenState extends State<GameplayScreen>
         content: Text(
           'Great effort! Try again to beat your best time.',
           style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-            color: Colors.white.withValues(alpha: 0.9),
+            color: Colors.white.withOpacity(0.9),
           ),
         ),
         actions: [
@@ -375,7 +434,7 @@ class _GameplayScreenState extends State<GameplayScreen>
             },
             child: Text(
               'Main Menu',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+              style: TextStyle(color: Colors.white.withOpacity(0.8)),
             ),
           ),
         ],
@@ -396,21 +455,21 @@ class _GameplayScreenState extends State<GameplayScreen>
             gradient: LinearGradient(
               colors: [
                 Color(container["color"] as int)
-                    .withValues(alpha: isHighlighted ? 0.8 : 0.6),
+                    .withOpacity(isHighlighted ? 0.8 : 0.6),
                 Color(container["color"] as int)
-                    .withValues(alpha: isHighlighted ? 0.6 : 0.4),
+                    .withOpacity(isHighlighted ? 0.6 : 0.4),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isHighlighted
-                  ? Colors.white.withValues(alpha: 0.8)
-                  : Colors.white.withValues(alpha: 0.3),
+                  ? Colors.white.withOpacity(0.8)
+                  : Colors.white.withOpacity(0.3),
               width: isHighlighted ? 3 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: Colors.black.withOpacity(0.3),
                 blurRadius: isHighlighted ? 15 : 8,
                 offset: const Offset(0, 4),
                 spreadRadius: isHighlighted ? 2 : 0,
@@ -418,7 +477,7 @@ class _GameplayScreenState extends State<GameplayScreen>
               if (isHighlighted)
                 BoxShadow(
                   color:
-                      Color(container["color"] as int).withValues(alpha: 0.4),
+                      Color(container["color"] as int).withOpacity(0.4),
                   blurRadius: 20,
                   spreadRadius: 3,
                 ),
@@ -452,7 +511,7 @@ class _GameplayScreenState extends State<GameplayScreen>
                           '${(container["items"] as List).length} items',
                           style: AppTheme.lightTheme.textTheme.labelSmall
                               ?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.white.withOpacity(0.8),
                           ),
                         ),
                       ],
@@ -470,7 +529,7 @@ class _GameplayScreenState extends State<GameplayScreen>
                       color: Colors.yellow,
                       width: 3,
                     ),
-                    color: Colors.yellow.withValues(alpha: 0.2),
+                    color: Colors.yellow.withOpacity(0.2),
                   ),
                 ),
             ],
@@ -622,8 +681,11 @@ class _GameplayScreenState extends State<GameplayScreen>
               .length *
           100;
 
-      _score = (1000 * efficiency).round() + (stars * 500) + itemVarietyBonus;
-      _totalGameScore += _score;
+      _comboResetTimer?.cancel();
+      _comboResetTimer = null;
+      final completionBonus =
+          (1000 * efficiency).round() + (stars * 500) + itemVarietyBonus;
+      final finalScore = _score + completionBonus;
 
       // Generate unlocked features based on performance
       _unlockedFeatures.clear();
@@ -639,11 +701,15 @@ class _GameplayScreenState extends State<GameplayScreen>
       }
 
       setState(() {
+        _clearComboState();
+        _score = finalScore;
         _isLevelComplete = true;
         _showAdvancedConfetti = true;
         _showProgressTransition = true;
         _showRewardSystem = stars >= 2;
       });
+
+      _totalGameScore += finalScore;
 
       // Enhanced celebration with premium audio
       _premiumAudioManager.playLevelCompleteFanfare(stars, _currentLevel);
@@ -703,7 +769,7 @@ class _GameplayScreenState extends State<GameplayScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor:
-            AppTheme.lightTheme.colorScheme.surface.withValues(alpha: 0.95),
+            AppTheme.lightTheme.colorScheme.surface.withOpacity(0.95),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Restart Level?',
@@ -847,27 +913,30 @@ class _GameplayScreenState extends State<GameplayScreen>
     _audioManager.playSparkleSound();
 
     // Handle different reward types
-    switch (rewardType) {
-      case 'bonus_points':
-        _score += 500;
-        break;
-      case 'extra_moves':
-        _maxMoves += 3;
-        break;
-      case 'jackpot':
-        _score += _jackpotAmount;
-        setState(() {
-          _showJackpot = false;
-          _jackpotAmount = 0;
-        });
-        break;
-      default:
-        // Default reward handling
-        break;
-    }
+    int rewardPoints = 0;
 
     setState(() {
-      _totalGameScore += _score;
+      switch (rewardType) {
+        case 'bonus_points':
+          rewardPoints = 500;
+          break;
+        case 'extra_moves':
+          _maxMoves += 3;
+          break;
+        case 'jackpot':
+          rewardPoints = _jackpotAmount;
+          _showJackpot = false;
+          _jackpotAmount = 0;
+          break;
+        default:
+          // Default reward handling
+          break;
+      }
+
+      if (rewardPoints > 0) {
+        _score += rewardPoints;
+        _totalGameScore += rewardPoints;
+      }
     });
   }
 
@@ -943,6 +1012,7 @@ class _GameplayScreenState extends State<GameplayScreen>
     _ambientController.dispose();
     _premiumAudioManager.dispose();
     _gestureController.dispose();
+    _comboResetTimer?.cancel();
     super.dispose();
   }
 
@@ -981,6 +1051,7 @@ class _GameplayScreenState extends State<GameplayScreen>
                         onPausePressed: _showTutorial ? () {} : _onPausePressed,
                         gameTimer: _gameTimer,
                         showTimer: true,
+                        score: _score,
                         onTimerComplete: _onTimerExpired,
                       ),
 
@@ -1041,6 +1112,58 @@ class _GameplayScreenState extends State<GameplayScreen>
                       isActive: _showSparkles,
                       position: _sparklePosition,
                       color: Colors.yellow.shade400,
+                    ),
+
+                  if (_showComboIndicator && !_showTutorial)
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 14.h,
+                      right: 5.w,
+                      child: AnimatedOpacity(
+                        opacity: _showComboIndicator ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 150),
+                        child: Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.2.h),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.orange.shade400,
+                                Colors.orange.shade600,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.shade200.withOpacity(0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _comboText,
+                                style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.1,
+                                ),
+                              ),
+                              SizedBox(height: 0.6.h),
+                              Text(
+                                '+$_lastPlacementPoints pts',
+                                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
 
                   // Achievement notification - only when tutorial inactive
@@ -1150,7 +1273,7 @@ class _GameplayScreenState extends State<GameplayScreen>
                       left: 2.w,
                       child: FloatingActionButton.small(
                         onPressed: _restartTutorial,
-                        backgroundColor: Colors.blue.withValues(alpha: 0.7),
+                        backgroundColor: Colors.blue.withOpacity(0.7),
                         child: const Icon(Icons.school, color: Colors.white),
                       ),
                     ),

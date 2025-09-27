@@ -24,7 +24,7 @@ class LevelProgressWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -59,7 +59,7 @@ class LevelProgressWidget extends StatelessWidget {
             height: 1.h,
             decoration: BoxDecoration(
               color: AppTheme.lightTheme.colorScheme.outline
-                  .withValues(alpha: 0.3),
+                  .withOpacity(0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: FractionallySizedBox(
