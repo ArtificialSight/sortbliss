@@ -1,6 +1,6 @@
 # SortBliss Improvement Research
 
-This document outlines prioritized recommendations to improve SortBliss across reliability, performance, accessibility, error handling, visual polish, and Supabase integration. Suggestions highlight relevant code hotspots and connect them with industry practices popular in mature Flutter, React, and Next.js applications.
+This document outlines prioritized recommendations to improve SortBliss across reliability, performance, accessibility, error handling, visual polish, and Supabase integration. The suggestions highlight relevant code hotspots and connect them with industry practices commonly used in mature Flutter, React, and Next.js applications.
 
 ## 1. Drag-and-drop reliability
 
