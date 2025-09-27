@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 
@@ -24,438 +25,332 @@ class MainMenu extends StatefulWidget {
   State<MainMenu> createState() => _MainMenuState();
 }
 
-class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
+class _MainMenuState extends State<MainMenu>
+    with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late final DailyChallengeService _dailyChallengeService;
   DailyChallengePayload? _dailyChallenge;
   Duration? _dailyChallengeTimeRemaining;
-  bool _loadingDailyChallenge = true;
-  StreamSubscription<DailyChallengePayload>? _challengeSubscription;
-  StreamSubscription<Duration>? _countdownSubscription;
-  late final PlayerProfileService _profileService;
-  late Future<void> _profileInitialization;
+  Timer? _timer;
+  late PlayerProfilePayload profile;
+  late StreamSubscription _profileSubscription;
+  late StreamSubscription _analyticsSubscription;
+  late StreamSubscription _dailyChallengeSubscription;
+  late StreamSubscription _dailyChallengeTimerSubscription;
 
   @override
   void initState() {
     super.initState();
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
     _fadeController.forward();
 
-    _dailyChallengeService = DailyChallengeService(
-      supabaseRestEndpoint: Environment.supabaseDailyChallengeEndpoint,
-      supabaseAnonKey: Environment.supabaseAnonKeyOrNull,
-    );
-    _profileService = PlayerProfileService.instance;
-    _profileInitialization = _profileService.ensureInitialized();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadDailyChallenge();
-      _profileInitialization.then((_) {
-        if (!mounted) return;
-        _maybeShowRatePrompt(_profileService.currentProfile);
-      });
+    _dailyChallengeService = DailyChallengeService.instance;
+    profile = PlayerProfileService.instance.profile;
+
+    _initializeSubscriptions();
+    _refreshDailyChallenge();
+  }
+
+  void _initializeSubscriptions() {
+    _profileSubscription =
+        PlayerProfileService.instance.profileStream.listen((newProfile) {
+      if (mounted) {
+        setState(() {
+          profile = newProfile;
+        });
+      }
     });
+
+    _analyticsSubscription = AnalyticsService.instance.eventStream.listen((_) {
+      if (mounted) {
+        setState(() {
+          profile = PlayerProfileService.instance.profile;
+        });
+      }
+    });
+
+    _dailyChallengeSubscription =
+        _dailyChallengeService.challengeStream.listen((challenge) {
+      if (mounted) {
+        setState(() {
+          _dailyChallenge = challenge;
+        });
+      }
+    });
+
+    _dailyChallengeTimerSubscription =
+        _dailyChallengeService.timeRemainingStream.listen((timeRemaining) {
+      if (mounted) {
+        setState(() {
+          _dailyChallengeTimeRemaining = timeRemaining;
+        });
+      }
+    });
+
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {
+          profile = PlayerProfileService.instance.profile;
+        });
+      }
+    });
+  }
+
+  void _refreshDailyChallenge() {
+    try {
+      final challenge = _dailyChallengeService.getCurrentChallenge();
+      final timeRemaining = _dailyChallengeService.getTimeRemaining();
+      if (mounted) {
+        setState(() {
+          _dailyChallenge = challenge;
+          _dailyChallengeTimeRemaining = timeRemaining;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error refreshing daily challenge: $e');
+    }
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
-    _challengeSubscription?.cancel();
-    _countdownSubscription?.cancel();
-    unawaited(_dailyChallengeService.dispose());
+    _timer?.cancel();
+    _profileSubscription.cancel();
+    _analyticsSubscription.cancel();
+    _dailyChallengeSubscription.cancel();
+    _dailyChallengeTimerSubscription.cancel();
     super.dispose();
   }
 
-  Future<void> _loadDailyChallenge({bool forceRefresh = false}) async {
-    setState(() {
-      _loadingDailyChallenge = true;
-    });
+  void _openStorefront() {
     try {
-      _challengeSubscription ??=
-          _dailyChallengeService.challengeStream.listen((payload) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _dailyChallenge = payload;
-          _dailyChallengeTimeRemaining = payload.timeUntilReset;
-        });
-        _countdownSubscription?.cancel();
-        _countdownSubscription = _dailyChallengeService
-            .countdownStream(payload.resetAt)
-            .listen((duration) {
-          if (!mounted) {
-            return;
-          }
-          setState(() {
-            _dailyChallengeTimeRemaining = duration;
-          });
-        });
+      AnalyticsService.instance.logEvent('storefront_opened', {});
+      Navigator.pushNamed(context, AppRoutes.storefrontRoute);
+    } catch (e) {
+      debugPrint('Error opening storefront: $e');
+    }
+  }
+
+  void _shareProgress(PlayerProfilePayload profile) async {
+    try {
+      // Log analytics
+      AnalyticsService.instance.logEvent('share_progress_initiated', {
+        'level': profile.currentLevel,
+        'total_score': profile.totalScore,
+        'achievements_unlocked': profile.achievements.length,
       });
 
-      final challenge =
-          await _dailyChallengeService.loadDailyChallenge(forceRefresh: forceRefresh);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _dailyChallenge = challenge;
-        _dailyChallengeTimeRemaining = challenge.timeUntilReset;
+      final message = 
+          'Just reached level ${profile.currentLevel} in SortBliss! 🎯\n'
+          'Total Score: ${profile.totalScore.toStringAsFixed(0)} points\n'
+          'Achievements Unlocked: ${profile.achievements.length}\n\n'
+          'Can you beat my score? Download SortBliss now! 🚀';
+
+      await Share.share(message, subject: 'Check out my SortBliss progress!');
+
+      // Log successful share
+      AnalyticsService.instance.logEvent('share_progress_completed', {
+        'level': profile.currentLevel,
       });
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unable to sync daily challenge: $error')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loadingDailyChallenge = false;
-        });
-      }
+    } catch (e) {
+      debugPrint('Error sharing progress: $e');
+      AnalyticsService.instance.logEvent('share_progress_failed', {
+        'error': e.toString(),
+      });
     }
   }
 
-  void _navigateToGameplay() {
-    Navigator.pushNamed(context, '/gameplay-screen');
-  }
-
-  void _navigateToDailyChallenge() {
-    if (_dailyChallenge == null || _loadingDailyChallenge) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('Daily challenge is syncing. Please try again in a moment.'),
-        ),
-      );
-      return;
-    }
-
-    Navigator.pushNamed(
-      context,
-      AppRoutes.dailyChallenge,
-      arguments: DailyChallengeScreenArgs(
-        service: _dailyChallengeService,
-        initialChallenge: _dailyChallenge!,
-      ),
-    );
-  }
-
-  void _navigateToAchievements(PlayerProfile profile) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.achievements,
-      arguments: AchievementsScreenArgs.fromProfile(profile),
-    );
-  }
-
-  void _navigateToSettings() {
-    Navigator.pushNamed(context, AppRoutes.settings);
-  }
-
-  Future<void> _shareProgress(PlayerProfile profile) async {
-    final coins = profile.coinsEarned;
-    final level = profile.currentLevel;
-    final streak = profile.currentStreak;
-    final message =
-        'I just completed level $level in SortBliss with a $streak day streak and $coins coins earned! Can you beat my score?';
-
+  void _rateApp() async {
     try {
-      await Share.share(message, subject: 'SortBliss Progress Update');
-      await _profileService.incrementShareCount();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to open share sheet: $error')),
-      );
-    }
-  }
-
-  void _rateApp() {
-    _showRatingPrompt();
-  }
-
-  Future<void> _purchaseRemoveAds(PlayerProfile profile) async {
-    if (profile.hasRemoveAdsPurchase) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ads already removed. Thank you!')),
-        );
+      AnalyticsService.instance.logEvent('rate_app_initiated', {});
+      
+      final InAppReview inAppReview = InAppReview.instance;
+      
+      if (await inAppReview.isAvailable()) {
+        await inAppReview.requestReview();
+        AnalyticsService.instance.logEvent('rate_app_review_shown', {});
+      } else {
+        await inAppReview.openStoreListing();
+        AnalyticsService.instance.logEvent('rate_app_store_opened', {});
       }
-      return;
+    } catch (e) {
+      debugPrint('Error requesting app review: $e');
+      AnalyticsService.instance.logEvent('rate_app_failed', {
+        'error': e.toString(),
+      });
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Processing your Remove Ads purchase...')),
-    );
-    await _profileService.setRemoveAdsPurchased(true);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ads removed. Enjoy the uninterrupted flow!')),
-    );
-  }
-
-  Future<void> _maybeShowRatePrompt(PlayerProfile profile) async {
-    if (!profile.showRatePrompt) {
-      return;
-    }
-    await Future.delayed(const Duration(milliseconds: 450));
-    if (!mounted) {
-      return;
-    }
-    await _showRatingPrompt();
-    await _profileService.markRatePromptShown();
-  }
-
-  Future<void> _showRatingPrompt() async {
-    double rating = 4;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Enjoying SortBliss?',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 1.h),
-                  Text(
-                    'Tap a star to rate your relaxation journey. We read every review!',
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: 2.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      final starValue = index + 1;
-                      final isSelected = rating >= starValue;
-                      return IconButton(
-                        onPressed: () {
-                          setState(() {
-                            rating = starValue.toDouble();
-                          });
-                        },
-                        icon: Icon(
-                          isSelected ? Icons.star : Icons.star_border,
-                          color: Colors.amber,
-                          size: 28,
-                        ),
-                      );
-                    }),
-                  ),
-                  SizedBox(height: 1.5.h),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(this.context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Thank you for rating us $rating ★!'),
-                              ),
-                            );
-                          },
-                          child: const Text('Submit'),
-                        ),
-                      ),
-                      SizedBox(width: 2.w),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Maybe later'),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: FutureBuilder<void>(
-          future: _profileInitialization,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return ValueListenableBuilder<PlayerProfile>(
-              valueListenable: _profileService.profileListenable,
-              builder: (context, profile, _) {
-                final recentAchievements =
-                    profile.unlockedAchievements.take(3).toList(growable: false);
-                final achievementsSubtitle = recentAchievements.isEmpty
-                    ? 'Track your milestones'
-                    : 'Recent: ${recentAchievements.join(', ')}';
-                return Stack(
-                  children: [
-                    const AnimatedBackgroundWidget(),
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: RefreshIndicator(
-                        onRefresh: () async {
-                          await _loadDailyChallenge(forceRefresh: true);
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Daily challenge updated!'),
+      backgroundColor: Colors.transparent,
+      body: AnimatedBackgroundWidget(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: StreamBuilder<PlayerProfilePayload>(
+            stream: PlayerProfileService.instance.profileStream,
+            builder: (context, snapshot) {
+              final profile = snapshot.data ?? this.profile;
+              return CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SafeArea(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 2.h,
+                        ),
+                        child: Column(
+                          children: [
+                            // Title and Player Stats
+                            Container(
+                              margin: EdgeInsets.only(bottom: 4.h),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'SortBliss',
+                                    style: TextStyle(
+                                      fontSize: 32.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.primaryText,
+                                      shadows: [
+                                        Shadow(
+                                          offset: const Offset(2, 2),
+                                          blurRadius: 4,
+                                          color: Colors.black.withOpacity(0.3),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  PlayerStatsWidget(profile: profile),
+                                ],
                               ),
-                            );
-                          }
-                        },
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: Column(
-                            children: [
-                              SizedBox(height: 2.h),
-                              // App Logo/Title
-                              Text(
-                                'SortBliss',
-                                style: TextStyle(
-                                  fontSize: 28.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      AppTheme.lightTheme.colorScheme.primary,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                              SizedBox(height: 1.h),
-                              Text(
-                                'Organize. Sort. Relax.',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: AppTheme.lightTheme.colorScheme
-                                      .onSurfaceVariant,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                              SizedBox(height: 4.h),
+                            ),
 
-                              // Player Stats
-                              PlayerStatsWidget(
-                                levelsCompleted: profile.levelsCompleted,
-                                currentStreak: profile.currentStreak,
-                                coinsEarned: profile.coinsEarned,
-                              ),
-                              SizedBox(height: 3.h),
+                            // Play Button
+                            Container(
+                              margin: EdgeInsets.only(bottom: 4.h),
+                              child: PlayButtonWidget(profile: profile),
+                            ),
 
-                              // Level Progress
-                              LevelProgressWidget(
-                                currentLevel: profile.currentLevel,
-                                progressPercentage: profile.levelProgress,
-                              ),
-                              SizedBox(height: 4.h),
+                            // Level Progress
+                            Container(
+                              margin: EdgeInsets.only(bottom: 4.h),
+                              child: LevelProgressWidget(profile: profile),
+                            ),
 
-                              // Play Button
-                              PlayButtonWidget(
-                                onPressed: _navigateToGameplay,
-                              ),
-                              SizedBox(height: 4.h),
-
-                              // Daily Challenge
-                              DailyChallengeWidget(
-                                challenge: _dailyChallenge,
-                                timeRemaining: _dailyChallengeTimeRemaining,
-                                isLoading: _loadingDailyChallenge,
-                                onPressed: _dailyChallenge != null
-                                    ? _navigateToDailyChallenge
-                                    : null,
-                              ),
-                              SizedBox(height: 3.h),
-
-                              // Achievements
-                              MenuActionButtonWidget(
-                                iconName: 'emoji_events',
-                                title: 'Achievements',
-                                subtitle: achievementsSubtitle,
-                                onPressed: () =>
-                                    _navigateToAchievements(profile),
-                                iconColor: Colors.orange,
-                                showBadge:
-                                    profile.unlockedAchievements.isNotEmpty,
-                              ),
-                              SizedBox(height: 3.h),
-
-                              // Settings
-                              MenuActionButtonWidget(
-                                iconName: 'settings',
-                                title: 'Settings',
-                                subtitle: 'Sound, vibration, tutorial',
-                                onPressed: _navigateToSettings,
-                                iconColor: Colors.grey,
-                              ),
-                              SizedBox(height: 3.h),
-
-                              if (!profile.hasRemoveAdsPurchase)
-                                MenuActionButtonWidget(
-                                  iconName: 'block',
-                                  title: 'Remove Ads',
-                                  subtitle: 'One-time purchase - \$2.99',
-                                  onPressed: () {
-                                    _purchaseRemoveAds(profile);
+                            // Daily Challenge
+                            if (_dailyChallenge != null)
+                              Container(
+                                margin: EdgeInsets.only(bottom: 4.h),
+                                child: DailyChallengeWidget(
+                                  challenge: _dailyChallenge!,
+                                  timeRemaining: _dailyChallengeTimeRemaining,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            DailyChallengeScreen(
+                                          challenge: _dailyChallenge!,
+                                        ),
+                                      ),
+                                    );
                                   },
-                                  iconColor: Colors.red,
                                 ),
-                              if (!profile.hasRemoveAdsPurchase)
-                                SizedBox(height: 3.h),
-
-                              MenuActionButtonWidget(
-                                iconName: 'share',
-                                title: 'Share Progress',
-                                subtitle:
-                                    'Tell friends about your achievements',
-                                onPressed: () {
-                                  _shareProgress(profile);
-                                },
-                                iconColor: Colors.blue,
                               ),
-                              SizedBox(height: 3.h),
 
-                              MenuActionButtonWidget(
-                                iconName: 'star',
-                                title: 'Rate SortBliss',
-                                subtitle: 'Help us improve the game',
-                                onPressed: _rateApp,
-                                iconColor: Colors.amber,
+                            // Menu Actions
+                            Container(
+                              padding: EdgeInsets.all(4.w),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.2),
+                                  width: 1,
+                                ),
                               ),
-                              SizedBox(height: 6.h),
-                            ],
-                          ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'More Options',
+                                    style: TextStyle(
+                                      fontSize: 20.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.primaryText,
+                                    ),
+                                  ),
+                                  SizedBox(height: 3.h),
+                                  MenuActionButtonWidget(
+                                    iconName: 'trophy',
+                                    title: 'Achievements',
+                                    subtitle: 'View your accomplishments',
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const AchievementsScreen(),
+                                        ),
+                                      );
+                                    },
+                                    iconColor: Colors.amber,
+                                  ),
+                                  SizedBox(height: 3.h),
+                                  MenuActionButtonWidget(
+                                    iconName: 'shop',
+                                    title: 'Shop',
+                                    subtitle: 'Unlock premium features & themes',
+                                    onPressed: _openStorefront,
+                                    iconColor: Colors.green,
+                                  ),
+                                  SizedBox(height: 3.h),
+                                  MenuActionButtonWidget(
+                                    iconName: 'share',
+                                    title: 'Share Progress',
+                                    subtitle: 'Tell friends about your achievements',
+                                    onPressed: () {
+                                      _shareProgress(profile);
+                                    },
+                                    iconColor: Colors.blue,
+                                  ),
+                                  SizedBox(height: 3.h),
+                                  MenuActionButtonWidget(
+                                    iconName: 'star',
+                                    title: 'Rate SortBliss',
+                                    subtitle: 'Help us improve the game',
+                                    onPressed: _rateApp,
+                                    iconColor: Colors.amber,
+                                  ),
+                                  SizedBox(height: 6.h),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                );
-              },
-            );
-          },
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

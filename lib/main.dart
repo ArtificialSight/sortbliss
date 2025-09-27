@@ -9,7 +9,11 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  
+  // Initialize monetization and ads
+  await MonetizationManager.instance.initialize();
+  await AdManager.instance.initialize();
+  
   await Environment.bootstrap();
   
   await AchievementsTrackerService.instance.ensureInitialized();
@@ -30,5 +34,36 @@ void main() async {
     }
     return SizedBox.shrink();
   };
+  
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Sizer(builder: (context, orientation, screenType) {
+      return MaterialApp(
+        title: 'sortbliss',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.light,
+        // 🚨 CRITICAL: NEVER REMOVE OR MODIFY
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(1.0),
+            ),
+            child: child!,
+          );
+        },
+        // 🚨 END CRITICAL SECTION
+        debugShowCheckedModeBanner: false,
+        routes: AppRoutes.routes,
+        initialRoute: AppRoutes.initial,
+      );
+    });
+  }
+}
