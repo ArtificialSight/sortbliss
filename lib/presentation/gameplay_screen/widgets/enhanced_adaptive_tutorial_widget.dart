@@ -7,6 +7,7 @@ import '../../../theme/app_theme.dart';
 import '../../../core/premium_audio_manager.dart';
 import '../../../core/haptic_manager.dart';
 import '../../../core/gesture_controller.dart';
+import '../user_speed_classifier.dart';
 
 class EnhancedAdaptiveTutorialWidget extends StatefulWidget {
   final int currentLevel;
@@ -74,13 +75,7 @@ class _EnhancedAdaptiveTutorialWidgetState
   }
 
   void _calculateAdaptiveDelay() {
-    if (widget.userSpeed > 1.5) {
-      _adaptiveDelay = 0.7;
-    } else if (widget.userSpeed < 0.7) {
-      _adaptiveDelay = 1.5;
-    } else {
-      _adaptiveDelay = 1.0;
-    }
+    _adaptiveDelay = calculateAdaptiveDelay(widget.userSpeed);
   }
 
   void _generateTutorialSteps() {
