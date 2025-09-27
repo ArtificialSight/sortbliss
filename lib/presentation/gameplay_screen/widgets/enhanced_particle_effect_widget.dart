@@ -58,10 +58,10 @@ class _EnhancedParticleEffectWidgetState
     final random = math.Random();
     final colors = [
       widget.particleColor,
-      widget.particleColor.withValues(alpha: 0.8),
-      Colors.white.withValues(alpha: 0.9),
-      Colors.yellow.withValues(alpha: 0.8),
-      Colors.orange.withValues(alpha: 0.7),
+      widget.particleColor.withOpacity(0.8),
+      Colors.white.withOpacity(0.9),
+      Colors.yellow.withOpacity(0.8),
+      Colors.orange.withOpacity(0.7),
     ];
     return colors[random.nextInt(colors.length)];
   }
@@ -147,7 +147,7 @@ class EnhancedParticlePainter extends CustomPainter {
       // Calculate opacity based on progress (fade out towards end)
       final opacity = (1 - progress).clamp(0.0, 1.0);
       final currentColor =
-          particle.color.withValues(alpha: particle.color.opacity * opacity);
+          particle.color.withOpacity(particle.color.opacity * opacity);
 
       // Calculate current size (shrink over time)
       final currentSize = particle.size * (1 - progress * 0.5);
@@ -162,7 +162,7 @@ class EnhancedParticlePainter extends CustomPainter {
 
       // Add glow effect
       final glowPaint = Paint()
-        ..color = currentColor.withValues(alpha: currentColor.opacity * 0.3)
+        ..color = currentColor.withOpacity(currentColor.opacity * 0.3)
         ..style = PaintingStyle.fill
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
@@ -180,7 +180,7 @@ class EnhancedParticlePainter extends CustomPainter {
       if (progress < 0.7) {
         final sparkleSize = currentSize * 0.3;
         final sparklePaint = Paint()
-          ..color = Colors.white.withValues(alpha: opacity * 0.8)
+          ..color = Colors.white.withOpacity(opacity * 0.8)
           ..style = PaintingStyle.fill;
 
         // Draw cross-shaped sparkle

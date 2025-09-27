@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import '../../core/services/daily_challenge_service.dart';
+import '../../core/services/player_profile_service.dart';
 import '../../theme/app_theme.dart';
 import '../daily_challenge/daily_challenge_screen.dart';
+import '../achievements/achievements_screen.dart';
 import './widgets/animated_background_widget.dart';
 import './widgets/daily_challenge_widget.dart';
 import './widgets/level_progress_widget.dart';
@@ -30,20 +33,8 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   bool _loadingDailyChallenge = true;
   StreamSubscription<DailyChallengePayload>? _challengeSubscription;
   StreamSubscription<Duration>? _countdownSubscription;
-
-  // Mock data for the main menu
-  final Map<String, dynamic> playerData = {
-    "levelsCompleted": 47,
-    "currentStreak": 12,
-    "coinsEarned": 2850,
-    "currentLevel": 48,
-    "levelProgress": 0.65,
-    "dailyChallengeCompleted": false,
-    "timeUntilReset": "14h 32m",
-    "recentAchievements": ["Speed Demon", "Perfectionist"],
-    "showRatePrompt": false,
-    "hasRemoveAdsPurchase": false,
-  };
+  late final PlayerProfileService _profileService;
+  late Future<void> _profileInitialization;
 
   @override
   void initState() {
@@ -58,21 +49,17 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
     _fadeController.forward();
 
     _dailyChallengeService = DailyChallengeService(
-      supabaseRestEndpoint: _envOrNull(
-        const String.fromEnvironment(
-          'SUPABASE_DAILY_CHALLENGE_ENDPOINT',
-          defaultValue: '',
-        ),
-      ),
-      supabaseAnonKey: _envOrNull(
-        const String.fromEnvironment(
-          'SUPABASE_ANON_KEY',
-          defaultValue: '',
-        ),
-      ),
+      supabaseRestEndpoint: Environment.supabaseDailyChallengeEndpoint,
+      supabaseAnonKey: Environment.supabaseAnonKeyOrNull,
     );
+    _profileService = PlayerProfileService.instance;
+    _profileInitialization = _profileService.ensureInitialized();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDailyChallenge();
+      _profileInitialization.then((_) {
+        if (!mounted) return;
+        _maybeShowRatePrompt(_profileService.currentProfile);
+      });
     });
   }
 
@@ -136,13 +123,6 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
     }
   }
 
-  String? _envOrNull(String value) {
-    if (value.isEmpty) {
-      return null;
-    }
-    return value;
-  }
-
   void _navigateToGameplay() {
     Navigator.pushNamed(context, '/gameplay-screen');
   }
@@ -168,99 +148,151 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
     );
   }
 
-  void _navigateToAchievements() {
-    // Navigate to achievements screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Achievements screen coming soon!')),
+  void _navigateToAchievements(PlayerProfile profile) {
+    Navigator.pushNamed(
+      context,
+      AppRoutes.achievements,
+      arguments: AchievementsScreenArgs.fromProfile(profile),
     );
   }
 
   void _navigateToSettings() {
-    // Navigate to settings screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings screen coming soon!')),
-    );
+    Navigator.pushNamed(context, AppRoutes.settings);
   }
 
-  void _shareProgress() {
-    // Share progress functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            'Level ${playerData["currentLevel"]} completed! \${playerData["coinsEarned"]} coins earned!'),
-      ),
-    );
+  Future<void> _shareProgress(PlayerProfile profile) async {
+    final coins = profile.coinsEarned;
+    final level = profile.currentLevel;
+    final streak = profile.currentStreak;
+    final message =
+        'I just completed level $level in SortBliss with a $streak day streak and $coins coins earned! Can you beat my score?';
+
+    try {
+      await Share.share(message, subject: 'SortBliss Progress Update');
+      await _profileService.incrementShareCount();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to open share sheet: $error')),
+      );
+    }
   }
 
   void _rateApp() {
-    // Rate app functionality
+    _showRatingPrompt();
+  }
+
+  Future<void> _purchaseRemoveAds(PlayerProfile profile) async {
+    if (profile.hasRemoveAdsPurchase) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ads already removed. Thank you!')),
+        );
+      }
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thank you for rating SortBliss!')),
+      const SnackBar(content: Text('Processing your Remove Ads purchase...')),
+    );
+    await _profileService.setRemoveAdsPurchased(true);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ads removed. Enjoy the uninterrupted flow!')),
     );
   }
 
-  void _purchaseRemoveAds() {
-    // Remove ads purchase
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Remove Ads for \$2.99 - Coming soon!')),
-    );
+  Future<void> _maybeShowRatePrompt(PlayerProfile profile) async {
+    if (!profile.showRatePrompt) {
+      return;
+    }
+    await Future.delayed(const Duration(milliseconds: 450));
+    if (!mounted) {
+      return;
+    }
+    await _showRatingPrompt();
+    await _profileService.markRatePromptShown();
   }
 
-  Widget _buildPullDownMenu() {
-    return Container(
-      width: 100.w,
-      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 10.w,
-            height: 0.5.h,
-            decoration: BoxDecoration(
-              color: AppTheme.lightTheme.colorScheme.outline,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          SizedBox(height: 2.h),
-          if (!(playerData["hasRemoveAdsPurchase"] as bool))
-            MenuActionButtonWidget(
-              iconName: 'block',
-              title: 'Remove Ads',
-              subtitle: 'One-time purchase - \$2.99',
-              onPressed: _purchaseRemoveAds,
-              iconColor: Colors.red,
-            ),
-          SizedBox(height: 2.h),
-          MenuActionButtonWidget(
-            iconName: 'share',
-            title: 'Share Progress',
-            subtitle: 'Tell friends about your achievements',
-            onPressed: _shareProgress,
-            iconColor: Colors.blue,
-          ),
-          SizedBox(height: 2.h),
-          MenuActionButtonWidget(
-            iconName: 'star',
-            title: 'Rate SortBliss',
-            subtitle: 'Help us improve the game',
-            onPressed: _rateApp,
-            iconColor: Colors.amber,
-          ),
-        ],
-      ),
+  Future<void> _showRatingPrompt() async {
+    double rating = 4;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Enjoying SortBliss?',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 1.h),
+                  Text(
+                    'Tap a star to rate your relaxation journey. We read every review!',
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final starValue = index + 1;
+                      final isSelected = rating >= starValue;
+                      return IconButton(
+                        onPressed: () {
+                          setState(() {
+                            rating = starValue.toDouble();
+                          });
+                        },
+                        icon: Icon(
+                          isSelected ? Icons.star : Icons.star_border,
+                          color: Colors.amber,
+                          size: 28,
+                        ),
+                      );
+                    }),
+                  ),
+                  SizedBox(height: 1.5.h),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Thank you for rating us $rating ★!'),
+                              ),
+                            );
+                          },
+                          child: const Text('Submit'),
+                        ),
+                      ),
+                      SizedBox(width: 2.w),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Maybe later'),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -268,108 +300,162 @@ class _MainMenuState extends State<MainMenu> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Stack(
-          children: [
-            const AnimatedBackgroundWidget(),
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await _loadDailyChallenge(forceRefresh: true);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Daily challenge updated!')),
-                    );
-                  }
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 2.h),
-                      // App Logo/Title
-                      Text(
-                        'SortBliss',
-                        style: TextStyle(
-                          fontSize: 28.sp,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.lightTheme.colorScheme.primary,
-                          letterSpacing: 1.5,
+        child: FutureBuilder<void>(
+          future: _profileInitialization,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return ValueListenableBuilder<PlayerProfile>(
+              valueListenable: _profileService.profileListenable,
+              builder: (context, profile, _) {
+                final recentAchievements =
+                    profile.unlockedAchievements.take(3).toList(growable: false);
+                final achievementsSubtitle = recentAchievements.isEmpty
+                    ? 'Track your milestones'
+                    : 'Recent: ${recentAchievements.join(', ')}';
+                return Stack(
+                  children: [
+                    const AnimatedBackgroundWidget(),
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          await _loadDailyChallenge(forceRefresh: true);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Daily challenge updated!'),
+                              ),
+                            );
+                          }
+                        },
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Column(
+                            children: [
+                              SizedBox(height: 2.h),
+                              // App Logo/Title
+                              Text(
+                                'SortBliss',
+                                style: TextStyle(
+                                  fontSize: 28.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      AppTheme.lightTheme.colorScheme.primary,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                              SizedBox(height: 1.h),
+                              Text(
+                                'Organize. Sort. Relax.',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: AppTheme.lightTheme.colorScheme
+                                      .onSurfaceVariant,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+
+                              // Player Stats
+                              PlayerStatsWidget(
+                                levelsCompleted: profile.levelsCompleted,
+                                currentStreak: profile.currentStreak,
+                                coinsEarned: profile.coinsEarned,
+                              ),
+                              SizedBox(height: 3.h),
+
+                              // Level Progress
+                              LevelProgressWidget(
+                                currentLevel: profile.currentLevel,
+                                progressPercentage: profile.levelProgress,
+                              ),
+                              SizedBox(height: 4.h),
+
+                              // Play Button
+                              PlayButtonWidget(
+                                onPressed: _navigateToGameplay,
+                              ),
+                              SizedBox(height: 4.h),
+
+                              // Daily Challenge
+                              DailyChallengeWidget(
+                                challenge: _dailyChallenge,
+                                timeRemaining: _dailyChallengeTimeRemaining,
+                                isLoading: _loadingDailyChallenge,
+                                onPressed: _dailyChallenge != null
+                                    ? _navigateToDailyChallenge
+                                    : null,
+                              ),
+                              SizedBox(height: 3.h),
+
+                              // Achievements
+                              MenuActionButtonWidget(
+                                iconName: 'emoji_events',
+                                title: 'Achievements',
+                                subtitle: achievementsSubtitle,
+                                onPressed: () =>
+                                    _navigateToAchievements(profile),
+                                iconColor: Colors.orange,
+                                showBadge:
+                                    profile.unlockedAchievements.isNotEmpty,
+                              ),
+                              SizedBox(height: 3.h),
+
+                              // Settings
+                              MenuActionButtonWidget(
+                                iconName: 'settings',
+                                title: 'Settings',
+                                subtitle: 'Sound, vibration, tutorial',
+                                onPressed: _navigateToSettings,
+                                iconColor: Colors.grey,
+                              ),
+                              SizedBox(height: 3.h),
+
+                              if (!profile.hasRemoveAdsPurchase)
+                                MenuActionButtonWidget(
+                                  iconName: 'block',
+                                  title: 'Remove Ads',
+                                  subtitle: 'One-time purchase - \$2.99',
+                                  onPressed: () {
+                                    _purchaseRemoveAds(profile);
+                                  },
+                                  iconColor: Colors.red,
+                                ),
+                              if (!profile.hasRemoveAdsPurchase)
+                                SizedBox(height: 3.h),
+
+                              MenuActionButtonWidget(
+                                iconName: 'share',
+                                title: 'Share Progress',
+                                subtitle:
+                                    'Tell friends about your achievements',
+                                onPressed: () {
+                                  _shareProgress(profile);
+                                },
+                                iconColor: Colors.blue,
+                              ),
+                              SizedBox(height: 3.h),
+
+                              MenuActionButtonWidget(
+                                iconName: 'star',
+                                title: 'Rate SortBliss',
+                                subtitle: 'Help us improve the game',
+                                onPressed: _rateApp,
+                                iconColor: Colors.amber,
+                              ),
+                              SizedBox(height: 6.h),
+                            ],
+                          ),
                         ),
                       ),
-                      SizedBox(height: 1.h),
-                      Text(
-                        'Organize. Sort. Relax.',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color:
-                              AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-
-                      // Player Stats
-                      PlayerStatsWidget(
-                        levelsCompleted: playerData["levelsCompleted"] as int,
-                        currentStreak: playerData["currentStreak"] as int,
-                        coinsEarned: playerData["coinsEarned"] as int,
-                      ),
-                      SizedBox(height: 3.h),
-
-                      // Level Progress
-                      LevelProgressWidget(
-                        currentLevel: playerData["currentLevel"] as int,
-                        progressPercentage:
-                            playerData["levelProgress"] as double,
-                      ),
-                      SizedBox(height: 4.h),
-
-                      // Play Button
-                      PlayButtonWidget(
-                        onPressed: _navigateToGameplay,
-                      ),
-                      SizedBox(height: 4.h),
-
-                      // Daily Challenge
-                      DailyChallengeWidget(
-                        challenge: _dailyChallenge,
-                        timeRemaining: _dailyChallengeTimeRemaining,
-                        isLoading: _loadingDailyChallenge,
-                        onPressed: _dailyChallenge != null
-                            ? _navigateToDailyChallenge
-                            : null,
-                      ),
-                      SizedBox(height: 3.h),
-
-                      // Achievements
-                      MenuActionButtonWidget(
-                        iconName: 'emoji_events',
-                        title: 'Achievements',
-                        subtitle:
-                            'Recent: ${(playerData["recentAchievements"] as List).join(", ")}',
-                        onPressed: _navigateToAchievements,
-                        iconColor: Colors.orange,
-                        showBadge: (playerData["recentAchievements"] as List)
-                            .isNotEmpty,
-                      ),
-                      SizedBox(height: 3.h),
-
-                      // Settings
-                      MenuActionButtonWidget(
-                        iconName: 'settings',
-                        title: 'Settings',
-                        subtitle: 'Sound, vibration, tutorial',
-                        onPressed: _navigateToSettings,
-                        iconColor: Colors.grey,
-                      ),
-                      SizedBox(height: 6.h),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+                    ),
+                  ],
+                );
+              },
+            );
+          },
         ),
       ),
     );

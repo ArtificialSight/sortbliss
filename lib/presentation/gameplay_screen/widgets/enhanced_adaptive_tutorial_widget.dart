@@ -402,13 +402,13 @@ class _EnhancedAdaptiveTutorialWidgetState
                     boxShadow: [
                       // CRITICAL: Maximum visibility shadows
                       BoxShadow(
-                        color: Colors.red.withValues(alpha: 1.0),
+                        color: Colors.red.withOpacity(1.0),
                         blurRadius: 30,
                         offset: const Offset(0, 10),
                         spreadRadius: 8,
                       ),
                       BoxShadow(
-                        color: Colors.white.withValues(alpha: 1.0),
+                        color: Colors.white.withOpacity(1.0),
                         blurRadius: 20,
                         offset: const Offset(0, 0),
                         spreadRadius: 4,
@@ -433,7 +433,7 @@ class _EnhancedAdaptiveTutorialWidgetState
                 .then()
                 .shimmer(
                   duration: 2000.ms,
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: Colors.white.withOpacity(0.6),
                 ),
 
             // CRITICAL FIX: Tutorial content that NEVER blocks
@@ -452,19 +452,19 @@ class _EnhancedAdaptiveTutorialWidgetState
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white.withValues(alpha: 0.95),
-                          Colors.white.withValues(alpha: 0.9),
+                          Colors.white.withOpacity(0.95),
+                          Colors.white.withOpacity(0.9),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: AppTheme.lightTheme.primaryColor
-                            .withValues(alpha: 0.3),
+                            .withOpacity(0.3),
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
+                          color: Colors.black.withOpacity(0.15),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -482,7 +482,7 @@ class _EnhancedAdaptiveTutorialWidgetState
                           ),
                           decoration: BoxDecoration(
                             color: AppTheme.lightTheme.primaryColor
-                                .withValues(alpha: 0.1),
+                                .withOpacity(0.1),
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: Text(
@@ -530,11 +530,11 @@ class _EnhancedAdaptiveTutorialWidgetState
                             padding: EdgeInsets.all(3.w),
                             decoration: BoxDecoration(
                               color: AppTheme.lightTheme.primaryColor
-                                  .withValues(alpha: 0.1),
+                                  .withOpacity(0.1),
                               borderRadius: BorderRadius.circular(15),
                               border: Border.all(
                                 color: AppTheme.lightTheme.primaryColor
-                                    .withValues(alpha: 0.3),
+                                    .withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -626,16 +626,14 @@ class _EnhancedAdaptiveTutorialWidgetState
               height: highlightRect.height,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Colors.yellow.withValues(
-                    alpha: 0.9 * _highlightAnimation.value,
+                  color: Colors.yellow.withOpacity(0.9 * _highlightAnimation.value,
                   ),
                   width: 6, // Thicker for better visibility
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.yellow.withValues(
-                      alpha: 0.8 * _highlightAnimation.value,
+                    color: Colors.yellow.withOpacity(0.8 * _highlightAnimation.value,
                     ),
                     blurRadius: 35,
                     offset: const Offset(0, 0),
@@ -785,7 +783,7 @@ class _EnhancedAdaptiveTutorialWidgetState
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.yellow.withValues(alpha: 0.7),
+                      color: Colors.yellow.withOpacity(0.7),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                       spreadRadius: 3,
@@ -809,7 +807,7 @@ class _EnhancedAdaptiveTutorialWidgetState
                         fontWeight: FontWeight.w800,
                         shadows: [
                           Shadow(
-                            color: Colors.black.withValues(alpha: 0.4),
+                            color: Colors.black.withOpacity(0.4),
                             offset: const Offset(2, 2),
                             blurRadius: 4,
                           ),
@@ -825,7 +823,7 @@ class _EnhancedAdaptiveTutorialWidgetState
       ),
     ).animate().fadeIn(delay: 800.ms).then().shimmer(
           duration: 1500.ms,
-          color: Colors.white.withValues(alpha: 0.4),
+          color: Colors.white.withOpacity(0.4),
         );
   }
 }

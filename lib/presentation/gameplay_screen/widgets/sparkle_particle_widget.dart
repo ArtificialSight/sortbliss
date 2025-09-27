@@ -155,7 +155,7 @@ class SparklePainter extends CustomPainter {
       if (sparkleProgress <= 0) continue;
 
       final paint = Paint()
-        ..color = color.withValues(alpha: opacity * sparkleProgress)
+        ..color = color.withOpacity(opacity * sparkleProgress)
         ..style = PaintingStyle.fill;
 
       final position = Offset(

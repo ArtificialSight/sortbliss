@@ -100,8 +100,7 @@ class _FloatingUIPanelWidgetState extends State<FloatingUIPanelWidget>
                 child: GestureDetector(
                   onTap: widget.onClose,
                   child: Container(
-                    color: Colors.black.withValues(
-                      alpha: 0.5 * _opacityAnimation.value,
+                    color: Colors.black.withOpacity(0.5 * _opacityAnimation.value,
                     ),
                   ),
                 ),
@@ -132,23 +131,23 @@ class _FloatingUIPanelWidgetState extends State<FloatingUIPanelWidget>
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Colors.white.withValues(alpha: 0.95),
-                                Colors.white.withValues(alpha: 0.85),
+                                Colors.white.withOpacity(0.95),
+                                Colors.white.withOpacity(0.85),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(25),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
+                              color: Colors.white.withOpacity(0.3),
                               width: 1,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
+                                color: Colors.black.withOpacity(0.1),
                                 blurRadius: 30,
                                 offset: const Offset(0, 15),
                               ),
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: Colors.black.withOpacity(0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 5),
                               ),
@@ -164,9 +163,9 @@ class _FloatingUIPanelWidgetState extends State<FloatingUIPanelWidget>
                                   gradient: LinearGradient(
                                     colors: [
                                       Colors.blue.shade400
-                                          .withValues(alpha: 0.1),
+                                          .withOpacity(0.1),
                                       Colors.purple.shade400
-                                          .withValues(alpha: 0.1),
+                                          .withOpacity(0.1),
                                     ],
                                   ),
                                   borderRadius: const BorderRadius.only(

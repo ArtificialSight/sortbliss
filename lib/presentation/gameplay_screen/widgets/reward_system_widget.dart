@@ -195,19 +195,19 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.purple.shade900.withValues(alpha: 0.3),
-            Colors.blue.shade900.withValues(alpha: 0.2),
-            Colors.purple.shade800.withValues(alpha: 0.1),
+            Colors.purple.shade900.withOpacity(0.3),
+            Colors.blue.shade900.withOpacity(0.2),
+            Colors.purple.shade800.withOpacity(0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: Colors.white.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -238,7 +238,7 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
                     Text(
                       'Level ${widget.currentLevel} • ${widget.totalScore} points',
                       style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: Colors.white.withOpacity(0.8),
                       ),
                     ),
                   ],
@@ -255,7 +255,7 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
                     borderRadius: BorderRadius.circular(15),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.orange.withValues(alpha: 0.5),
+                        color: Colors.orange.withOpacity(0.5),
                         blurRadius: 10,
                         offset: const Offset(0, 0),
                       ),
@@ -311,7 +311,7 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.amber.withValues(alpha: 0.6),
+                            color: Colors.amber.withOpacity(0.6),
                             blurRadius: 20,
                             offset: const Offset(0, 0),
                           ),
@@ -337,7 +337,7 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
                                   shadows: [
                                     Shadow(
                                       color:
-                                          Colors.black.withValues(alpha: 0.5),
+                                          Colors.black.withOpacity(0.5),
                                       offset: const Offset(2, 2),
                                       blurRadius: 4,
                                     ),
@@ -428,18 +428,18 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              color.withValues(alpha: 0.8),
-              color.withValues(alpha: 0.6),
+              color.withOpacity(0.8),
+              color.withOpacity(0.6),
             ],
           ),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white.withOpacity(0.3),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.3),
+              color: color.withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -501,7 +501,7 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.amber.withValues(alpha: 0.5),
+                color: Colors.amber.withOpacity(0.5),
                 blurRadius: 30,
                 offset: const Offset(0, 0),
               ),
@@ -586,7 +586,7 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
                 width: 12.w,
                 height: 0.5.h,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.3),
+                  color: Colors.white.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -667,8 +667,8 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
               gradient: LinearGradient(
                 colors: isUnlocked
                     ? [
-                        rarityColor.withValues(alpha: 0.8),
-                        rarityColor.withValues(alpha: 0.6)
+                        rarityColor.withOpacity(0.8),
+                        rarityColor.withOpacity(0.6)
                       ]
                     : [Colors.grey.shade800, Colors.grey.shade600],
               ),
@@ -680,7 +680,7 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
               boxShadow: isUnlocked
                   ? [
                       BoxShadow(
-                        color: rarityColor.withValues(alpha: 0.4),
+                        color: rarityColor.withOpacity(0.4),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -712,7 +712,7 @@ class _RewardSystemWidgetState extends State<RewardSystemWidget>
                     trophy['description'] as String,
                     style: TextStyle(
                       color: isUnlocked
-                          ? Colors.white.withValues(alpha: 0.8)
+                          ? Colors.white.withOpacity(0.8)
                           : Colors.grey.shade500,
                       fontSize: 9.sp,
                     ),
