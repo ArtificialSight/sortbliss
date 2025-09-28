@@ -58,7 +58,7 @@ class AppTheme {
       onSecondaryContainer: onSecondaryLight,
       tertiary: successLight,
       onTertiary: onPrimaryLight,
-      tertiaryContainer: successLight.withOpacity(0.1),
+      tertiaryContainer: Color.fromRGBO(16, 185, 129, 0.1),
       onTertiaryContainer: successLight,
       error: errorLight,
       onError: onErrorLight,
@@ -66,7 +66,7 @@ class AppTheme {
       onSurface: onSurfaceLight,
       onSurfaceVariant: textSecondaryLight,
       outline: dividerLight,
-      outlineVariant: dividerLight.withOpacity(0.5),
+      outlineVariant: Color.fromRGBO(17, 24, 39, 0.05),
       shadow: shadowLight,
       scrim: shadowLight,
       inverseSurface: surfaceDark,
@@ -74,15 +74,15 @@ class AppTheme {
       inversePrimary: primaryDark,
     ),
     scaffoldBackgroundColor: backgroundLight,
-    cardTheme: const CardTheme(
+    cardTheme: CardThemeData(
       color: surfaceLight,
       elevation: 2,
       shadowColor: shadowLight,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      margin: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: surfaceLight,
@@ -115,7 +115,7 @@ class AppTheme {
       onSecondaryContainer: onSecondaryDark,
       tertiary: successDark,
       onTertiary: onPrimaryDark,
-      tertiaryContainer: successDark.withOpacity(0.2),
+      tertiaryContainer: Color.fromRGBO(16, 185, 129, 0.2),
       onTertiaryContainer: successDark,
       error: errorDark,
       onError: onErrorDark,
@@ -123,7 +123,7 @@ class AppTheme {
       onSurface: onSurfaceDark,
       onSurfaceVariant: textSecondaryDark,
       outline: dividerDark,
-      outlineVariant: dividerDark.withOpacity(0.5),
+      outlineVariant: Color.fromRGBO(248, 250, 252, 0.05),
       shadow: shadowDark,
       scrim: shadowDark,
       inverseSurface: surfaceLight,
@@ -131,15 +131,15 @@ class AppTheme {
       inversePrimary: primaryLight,
     ),
     scaffoldBackgroundColor: backgroundDark,
-    cardTheme: const CardTheme(
+    cardTheme: CardThemeData(
       color: surfaceDark,
       elevation: 2,
       shadowColor: shadowDark,
       surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      margin: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: surfaceDark,
