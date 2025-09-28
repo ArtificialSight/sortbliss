@@ -74,7 +74,7 @@ class AppTheme {
       inversePrimary: primaryDark,
     ),
     scaffoldBackgroundColor: backgroundLight,
-    cardTheme: const CardTheme(
+    cardTheme: const CardThemeData(
       color: surfaceLight,
       elevation: 2,
       shadowColor: shadowLight,
@@ -131,7 +131,7 @@ class AppTheme {
       inversePrimary: primaryLight,
     ),
     scaffoldBackgroundColor: backgroundDark,
-    cardTheme: const CardTheme(
+    cardTheme: const CardThemeData(
       color: surfaceDark,
       elevation: 2,
       shadowColor: shadowDark,
