@@ -21,8 +21,22 @@ class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
     splash: (context) => const SplashScreen(),
-    levelComplete: (context) => const LevelCompleteScreen(),
-    gameplay: (context) => const GameplayScreen(),
+    levelComplete: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic> && args['levelData'] != null) {
+        return LevelCompleteScreen(levelData: args['levelData']);
+      }
+      // Provide default levelData if not specified
+      return const LevelCompleteScreen(levelData: {});
+    },
+    gameplay: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic> && args['levelData'] != null) {
+        return GameplayScreen(levelData: args['levelData']);
+      }
+      // Provide default levelData if not specified
+      return const GameplayScreen(levelData: {});
+    },
     mainMenu: (context) => const MainMenu(),
     achievements: (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
