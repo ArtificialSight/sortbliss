@@ -1,8 +1,6 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-
 import '../analytics/analytics_logger.dart';
 import 'monetization_manager.dart';
 
@@ -11,7 +9,6 @@ import 'monetization_manager.dart';
 /// surface analytics for every monetization touchpoint.
 class AdManager {
   AdManager._();
-
   static final AdManager instance = AdManager._();
 
   RewardedAd? _rewardedAd;
@@ -21,14 +18,17 @@ class AdManager {
   bool _loadingInterstitial = false;
   bool _listenerAttached = false;
 
+  // Test ad unit IDs (these are safe to use in any app)
+  static const String _testRewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
+  static const String _testInterstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
+
   Future<void> initialize() async {
     if (_initialised) return;
     await MobileAds.instance.initialize();
     _initialised = true;
-
     await _loadRewardedAd();
     await _loadInterstitialAd();
-
+    
     if (!_listenerAttached) {
       _listenerAttached = true;
       MonetizationManager.instance.addListener(_handleMonetizationChanged);
@@ -49,9 +49,10 @@ class AdManager {
 
   Future<void> _loadRewardedAd() async {
     if (_loadingRewarded || MonetizationManager.instance.isAdFree) return;
+    
     _loadingRewarded = true;
     await RewardedAd.load(
-      adUnitId: RewardedAd.testAdUnitId,
+      adUnitId: _testRewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -71,9 +72,10 @@ class AdManager {
 
   Future<void> _loadInterstitialAd() async {
     if (_loadingInterstitial || MonetizationManager.instance.isAdFree) return;
+    
     _loadingInterstitial = true;
     await InterstitialAd.load(
-      adUnitId: InterstitialAd.testAdUnitId,
+      adUnitId: _testInterstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
@@ -113,7 +115,7 @@ class AdManager {
     final rewardedAd = _rewardedAd!;
     _rewardedAd = null;
 
-    rewardedAd.fullScreenContentCallback = FullScreenContentCallback<RewardedAd>(
+    rewardedAd.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (_) {
         AnalyticsLogger.logEvent('rewarded_impression');
       },
@@ -156,8 +158,7 @@ class AdManager {
     _interstitialAd = null;
 
     final completer = Completer<void>();
-    interstitial.fullScreenContentCallback =
-        FullScreenContentCallback<InterstitialAd>(
+    interstitial.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (_) {
         AnalyticsLogger.logEvent('interstitial_impression');
       },
