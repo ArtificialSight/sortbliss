@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 class GameplayScreen extends StatefulWidget {
   final Map<String, dynamic> levelData;
   
-  const GameplayScreen({Key? key, required this.levelData}) : super(key: key);
+  const GameplayScreen({super.key, required this.levelData});
 
   @override
   State<GameplayScreen> createState() => _GameplayScreenState();
@@ -19,7 +19,7 @@ class _GameplayScreenState extends State<GameplayScreen>
   late AnimationController _ambientController;
   
   // Animations
-  late Animation<Color?> _backgroundAnimation;
+  late Animation<Color> _backgroundAnimation;
   late Animation<double> _ambientAnimation;
   
   // Game state variables
@@ -64,7 +64,6 @@ class _GameplayScreenState extends State<GameplayScreen>
       duration: const Duration(seconds: 4),
       vsync: this,
     );
-
     _backgroundAnimation = ColorTween(
       begin: const Color(0xFF0F172A), // Deep slate
       end: const Color(0xFF1E293B), // Lighter slate
@@ -78,7 +77,6 @@ class _GameplayScreenState extends State<GameplayScreen>
       duration: const Duration(seconds: 6),
       vsync: this,
     );
-
     _ambientAnimation = Tween<double>(
       begin: 0.1,
       end: 0.3,
@@ -136,33 +134,38 @@ class _GameplayScreenState extends State<GameplayScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _backgroundAnimation.value ?? const Color(0xFF0F172A),
-              const Color(0xFF1E293B),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Game header with score and moves
-              _buildGameHeader(),
-              
-              // Main game area
-              Expanded(
-                child: _buildGameArea(),
+      body: AnimatedBuilder(
+        animation: _backgroundAnimation,
+        builder: (context, child) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  _backgroundAnimation.value ?? const Color(0xFF0F172A),
+                  const Color(0xFF1E293B),
+                ],
               ),
-              
-              // Game controls
-              _buildGameControls(),
-            ],
-          ),
-        ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Game header with score and moves
+                  _buildGameHeader(),
+                  
+                  // Main game area
+                  Expanded(
+                    child: _buildGameArea(),
+                  ),
+                  
+                  // Game controls
+                  _buildGameControls(),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -234,5 +237,21 @@ class _GameplayScreenState extends State<GameplayScreen>
 
   void _pauseGame() {
     // Implement pause functionality
+    // For now, just show a simple dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Game Paused'),
+          content: const Text('The game is paused.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Resume'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
