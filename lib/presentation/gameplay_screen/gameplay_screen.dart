@@ -1,142 +1,238 @@
-177
-_backgroundAnimation = ColorTween(
-178
-  begin: const Color(0xFF0F172A), // Deep slate
-179
-  end: const Color(0xFF1E293B), // Lighter slate
-180
-).animate(CurvedAnimation(
-181
-  parent: _backgroundController,
-182
-  curve: Curves.easeInOut,
-183
-));
-184
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-185
-// Ambient lighting effect
-186
-_ambientController = AnimationController(
-187
-  duration: const Duration(seconds: 6),
-188
-  vsync: this,
-189
-);
-190
-
-191
-_ambientAnimation = Tween<double>(
-192
-  begin: 0.1,
-193
-  end: 0.3,
-194
-).animate(CurvedAnimation(
-195
-  parent: _ambientController,
-196
-  curve: Curves.easeInOut,
-197
-));
-198
-
-199
-_backgroundController.repeat(reverse: true);
-200
-_ambientController.repeat(reverse: true);
-201
-}
-202
-
-203
-void _initializeLevel() {
-204
-  _comboResetTimer?.cancel();
-205
-  _comboResetTimer = null;
-206
-  setState(() {
-207
-    // Reset basic game state
-208
-    _resetBasicGameState();
-209
-    
-210
-    // Reset speed analytics and timing metrics
-211
-    _resetSpeedMetrics();
-212
-    
-213
-    // Reset scoring and combo system
-214
-    _resetScoringSystem();
-215
-  });
-216
+class GameplayScreen extends StatefulWidget {
+  final Map<String, dynamic> levelData;
   
-217
-  // Reset containers
-218
-}
-219
+  const GameplayScreen({Key? key, required this.levelData}) : super(key: key);
 
-220
-/// Resets basic gameplay state variables
-221
-/// Separated for maintainability and conflict avoidance
-222
-void _resetBasicGameState() {
-223
-  _moveCount = 0;
-224
-  _isLevelComplete = false;
-225
-  _showParticleEffect = false;
-226
-  _highlightedContainerId = null;
-227
-  _draggedItemId = null;
-228
+  @override
+  State<GameplayScreen> createState() => _GameplayScreenState();
 }
-229
 
-230
-/// Resets speed analytics and move timestamp tracking
-231
-/// Added from codex/add-move-timestamp-and-user-speed-metrics branch
-232
-void _resetSpeedMetrics() {
-233
-  _lastMoveTimestamp = null;
-234
+class _GameplayScreenState extends State<GameplayScreen>
+    with TickerProviderStateMixin {
+  
+  // Animation controllers
+  late AnimationController _backgroundController;
+  late AnimationController _ambientController;
+  
+  // Animations
+  late Animation<Color?> _backgroundAnimation;
+  late Animation<double> _ambientAnimation;
+  
+  // Game state variables
+  int _moveCount = 0;
+  bool _isLevelComplete = false;
+  bool _showParticleEffect = false;
+  String? _highlightedContainerId;
+  String? _draggedItemId;
+  
+  // Timing and speed metrics
+  DateTime? _lastMoveTimestamp;
+  
+  // Scoring system
+  int _score = 0;
+  int _lastPlacementPoints = 0;
+  int _comboStreak = 0;
+  DateTime? _lastCorrectDropTime;
+  bool _showComboIndicator = false;
+  String _comboText = '';
+  
+  // Timer for combo reset
+  Timer? _comboResetTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+    _initializeLevel();
+  }
+
+  @override
+  void dispose() {
+    _backgroundController.dispose();
+    _ambientController.dispose();
+    _comboResetTimer?.cancel();
+    super.dispose();
+  }
+
+  void _initializeAnimations() {
+    // Background color animation
+    _backgroundController = AnimationController(
+      duration: const Duration(seconds: 4),
+      vsync: this,
+    );
+
+    _backgroundAnimation = ColorTween(
+      begin: const Color(0xFF0F172A), // Deep slate
+      end: const Color(0xFF1E293B), // Lighter slate
+    ).animate(CurvedAnimation(
+      parent: _backgroundController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Ambient lighting effect
+    _ambientController = AnimationController(
+      duration: const Duration(seconds: 6),
+      vsync: this,
+    );
+
+    _ambientAnimation = Tween<double>(
+      begin: 0.1,
+      end: 0.3,
+    ).animate(CurvedAnimation(
+      parent: _ambientController,
+      curve: Curves.easeInOut,
+    ));
+
+    _backgroundController.repeat(reverse: true);
+    _ambientController.repeat(reverse: true);
+  }
+
+  void _initializeLevel() {
+    _comboResetTimer?.cancel();
+    _comboResetTimer = null;
+    setState(() {
+      // Reset basic game state
+      _resetBasicGameState();
+      
+      // Reset speed analytics and timing metrics
+      _resetSpeedMetrics();
+      
+      // Reset scoring and combo system
+      _resetScoringSystem();
+    });
+  }
+
+  /// Resets basic gameplay state variables
+  /// Separated for maintainability and conflict avoidance
+  void _resetBasicGameState() {
+    _moveCount = 0;
+    _isLevelComplete = false;
+    _showParticleEffect = false;
+    _highlightedContainerId = null;
+    _draggedItemId = null;
+  }
+
+  /// Resets speed analytics and move timestamp tracking
+  /// Added from codex/add-move-timestamp-and-user-speed-metrics branch
+  void _resetSpeedMetrics() {
+    _lastMoveTimestamp = null;
+  }
+
+  /// Resets scoring system, combo streaks, and placement points
+  /// Added from main branch for comprehensive score tracking
+  void _resetScoringSystem() {
+    _score = 0;
+    _lastPlacementPoints = 0;
+    _comboStreak = 0;
+    _lastCorrectDropTime = null;
+    _showComboIndicator = false;
+    _comboText = '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _backgroundAnimation.value ?? const Color(0xFF0F172A),
+              const Color(0xFF1E293B),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Game header with score and moves
+              _buildGameHeader(),
+              
+              // Main game area
+              Expanded(
+                child: _buildGameArea(),
+              ),
+              
+              // Game controls
+              _buildGameControls(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Score: $_score',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            'Moves: $_moveCount',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGameArea() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: const Center(
+        child: Text(
+          'Game Area',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameControls() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ElevatedButton(
+            onPressed: _resetGame,
+            child: const Text('Reset'),
+          ),
+          ElevatedButton(
+            onPressed: _pauseGame,
+            child: const Text('Pause'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetGame() {
+    _initializeLevel();
+  }
+
+  void _pauseGame() {
+    // Implement pause functionality
+  }
 }
-235
-
-236
-/// Resets scoring system, combo streaks, and placement points
-237
-/// Added from main branch for comprehensive score tracking
-238
-void _resetScoringSystem() {
-239
-  _score = 0;
-240
-  _lastPlacementPoints = 0;
-241
-  _comboStreak = 0;
-242
-  _lastCorrectDropTime = null;
-243
-  _showComboIndicator = false;
-244
-  _comboText = '';
-245
-}
-246
-
-247
-// Reset containers
