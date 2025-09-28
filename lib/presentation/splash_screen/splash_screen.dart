@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
-
 import '../../../core/app_export.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -16,7 +15,6 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
-
   bool _isLoading = true;
   String _loadingText = 'Initializing...';
   double _loadingProgress = 0.0;
@@ -57,10 +55,10 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       // Hide status bar for full-screen experience
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
-
+      
       // Simulate initialization steps
       await _performInitializationSteps();
-
+      
       // Navigate based on user state
       await _navigateToNextScreen();
     } catch (e) {
@@ -83,7 +81,6 @@ class _SplashScreenState extends State<SplashScreen>
           _loadingProgress = (i + 1) / steps.length;
         });
       }
-
       await Future.delayed(Duration(milliseconds: steps[i]['duration'] as int));
     }
 
@@ -93,11 +90,11 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _navigateToNextScreen() async {
     await Future.delayed(const Duration(milliseconds: 500));
-
+    
     if (mounted) {
       // Restore system UI before navigation
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
+      
       // Navigate to main menu (assuming returning user for demo)
       Navigator.pushReplacementNamed(context, '/main-menu');
     }
@@ -179,11 +176,11 @@ class _SplashScreenState extends State<SplashScreen>
       width: 80.w,
       height: 25.h,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: const Color.fromRGBO(255, 255, 255, 0.15),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: const Color.fromRGBO(0, 0, 0, 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -200,7 +197,7 @@ class _SplashScreenState extends State<SplashScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: const Color.fromRGBO(0, 0, 0, 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -227,7 +224,7 @@ class _SplashScreenState extends State<SplashScreen>
           Text(
             'Organize & Relax',
             style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.8),
+              color: const Color.fromRGBO(255, 255, 255, 0.8),
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -248,7 +245,7 @@ class _SplashScreenState extends State<SplashScreen>
             _loadingText,
             textAlign: TextAlign.center,
             style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.9),
+              color: const Color.fromRGBO(255, 255, 255, 0.9),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -264,7 +261,7 @@ class _SplashScreenState extends State<SplashScreen>
           width: 60.w,
           height: 0.8.h,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: const Color.fromRGBO(255, 255, 255, 0.2),
             borderRadius: BorderRadius.circular(4),
           ),
           child: ClipRRect(
@@ -272,8 +269,8 @@ class _SplashScreenState extends State<SplashScreen>
             child: LinearProgressIndicator(
               value: _loadingProgress,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Colors.white.withOpacity(0.8),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color.fromRGBO(255, 255, 255, 0.8),
               ),
             ),
           ),
@@ -282,10 +279,10 @@ class _SplashScreenState extends State<SplashScreen>
         SizedBox(
           width: 6.w,
           height: 6.w,
-          child: CircularProgressIndicator(
+          child: const CircularProgressIndicator(
             strokeWidth: 2,
             valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.white.withOpacity(0.8),
+              Color.fromRGBO(255, 255, 255, 0.8),
             ),
           ),
         ),
@@ -299,10 +296,10 @@ class _SplashScreenState extends State<SplashScreen>
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.5.h),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: const Color.fromRGBO(255, 255, 255, 0.2),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.white.withOpacity(0.3),
+            color: const Color.fromRGBO(255, 255, 255, 0.3),
             width: 1,
           ),
         ),
