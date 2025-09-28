@@ -22,7 +22,14 @@ class AppRoutes {
     initial: (context) => const SplashScreen(),
     splash: (context) => const SplashScreen(),
     levelComplete: (context) => const LevelCompleteScreen(),
-    gameplay: (context) => const GameplayScreen(),
+    gameplay: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is GameplayScreenArgs) {
+        return GameplayScreen(levelData: args.levelData);
+      }
+      // Provide default level data if no arguments are passed
+      return const GameplayScreen(levelData: null);
+    },
     mainMenu: (context) => const MainMenu(),
     achievements: (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
@@ -63,4 +70,11 @@ class AppRoutes {
     },
     // TODO: Add your other routes here
   };
+}
+
+// Add GameplayScreenArgs class if it doesn't exist
+class GameplayScreenArgs {
+  final dynamic levelData;
+  
+  const GameplayScreenArgs({required this.levelData});
 }
