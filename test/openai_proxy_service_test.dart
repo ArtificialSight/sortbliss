@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sortbliss/core/services/openai_proxy_service.dart';
 import 'package:sortbliss/core/services/ai/ai_provider.dart';
 import 'package:sortbliss/core/services/ai/ai_errors.dart';
@@ -33,7 +34,15 @@ void main() {
   group('OpenAiProxyService', () {
     setUp(() async {
       // Simulate environment being loaded with required URLs & token.
+      await dotenv.testLoad(
+        fileInput:
+            'SUPABASE_SESSION_TOKEN=dummy\nSUPABASE_FUNCTIONS_URL=https://example.test',
+      );
       Environment.bootstrap();
+    });
+
+    tearDown(() {
+      dotenv.reset();
     });
 
     test('parses successful response', () async {

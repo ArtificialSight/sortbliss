@@ -21,11 +21,21 @@ class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
     splash: (context) => const SplashScreen(),
-    levelComplete: (context) => const LevelCompleteScreen(),
+    levelComplete: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic> && args['levelData'] != null) {
+        return LevelCompleteScreen(levelData: args['levelData']);
+      }
+      // Provide default levelData if not specified
+      return const LevelCompleteScreen(levelData: {});
+    },
     gameplay: (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is GameplayScreenArgs) {
         return GameplayScreen(levelData: args.levelData);
+      }
+      if (args is Map<String, dynamic> && args['levelData'] != null) {
+        return GameplayScreen(levelData: args['levelData']);
       }
       // Provide default level data if no arguments are passed
       return const GameplayScreen(levelData: null);
@@ -75,6 +85,6 @@ class AppRoutes {
 // Add GameplayScreenArgs class if it doesn't exist
 class GameplayScreenArgs {
   final dynamic levelData;
-  
+
   const GameplayScreenArgs({required this.levelData});
 }

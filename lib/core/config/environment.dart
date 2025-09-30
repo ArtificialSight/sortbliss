@@ -44,4 +44,26 @@ class Environment {
 
     return fallback ?? '';
   }
+
+  /// Supabase session token used to authenticate requests during development.
+  static String get supabaseSessionToken =>
+      _read('SUPABASE_SESSION_TOKEN');
+
+  /// Base URL for Supabase edge functions. Required for proxy requests.
+  static String get supabaseFunctionsUrl =>
+      _read('SUPABASE_FUNCTIONS_URL');
+
+  /// Base URL for OpenAI requests. Defaults to the public API endpoint.
+  static String get openAiBaseUrl =>
+      _read('OPENAI_BASE_URL', fallback: 'https://api.openai.com/v1');
+
+  /// REST endpoint for fetching the daily challenge from Supabase.
+  static String get supabaseDailyChallengeEndpoint =>
+      _read('SUPABASE_DAILY_CHALLENGE_ENDPOINT');
+
+  /// Public Supabase anon key when required by client integrations.
+  static String? get supabaseAnonKeyOrNull {
+    final value = _read('SUPABASE_ANON_KEY');
+    return value.isEmpty ? null : value;
+  }
 }

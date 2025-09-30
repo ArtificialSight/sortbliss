@@ -74,15 +74,15 @@ class AppTheme {
       inversePrimary: primaryDark,
     ),
     scaffoldBackgroundColor: backgroundLight,
-    cardTheme: CardThemeData(
+    cardTheme: const CardThemeData(
       color: surfaceLight,
       elevation: 2,
       shadowColor: shadowLight,
       surfaceTintColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      margin: const EdgeInsets.all(8),
+      margin: EdgeInsets.all(8),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: surfaceLight,
@@ -131,15 +131,15 @@ class AppTheme {
       inversePrimary: primaryLight,
     ),
     scaffoldBackgroundColor: backgroundDark,
-    cardTheme: CardThemeData(
+    cardTheme: const CardThemeData(
       color: surfaceDark,
       elevation: 2,
       shadowColor: shadowDark,
       surfaceTintColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
-      margin: const EdgeInsets.all(8),
+      margin: EdgeInsets.all(8),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: surfaceDark,
