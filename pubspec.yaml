@@ -2,20 +2,17 @@ name: sortbliss
 description: A new Flutter project.
 publish_to: none
 version: 1.0.0+1
-
 environment:
   sdk: ^3.6.0
-
 dependencies:
   flutter:       # CRITICAL: Required for every Flutter project - DO NOT REMOVE
     sdk: flutter # CRITICAL: Required for every Flutter project - DO NOT REMOVE
-
   # CRITICAL: Core UI and responsive design - DO NOT REMOVE OR MODIFY
   sizer: ^2.0.15              # Required for responsive design system
   flutter_svg: ^2.0.9        # Required for SVG icon support
   google_fonts: ^6.1.0       # Required for typography (replaces local fonts)
   shared_preferences: ^2.5.3 # Required for local data storage - updated for persistent storage of user preferences and settings
-  share_plus: ^7.2.1         # Social sharing utilities for progress sharing and referrals
+  share_plus: ^10.0.2         # Social sharing utilities for progress sharing and referrals - updated to latest version
   web: ^1.1.1
   flutter_dotenv: ^5.1.0     # Secure runtime configuration loading
   
@@ -37,12 +34,13 @@ dependencies:
   vector_math: ^2.1.4        # Advanced 3D mathematical operations and transformations
   collection: ^1.19.1        # Enhanced collections and utilities for data structure operations
   flutter_secure_storage: ^10.0.0-beta.4 # Secure storage of sensitive user data
-
+  in_app_purchase: ^3.2.0
+  google_mobile_ads: ^5.2.0
+  in_app_review: ^2.0.8
 dev_dependencies:
   flutter_test:    # CRITICAL: Required for Flutter project testing - DO NOT REMOVE
     sdk: flutter   # CRITICAL: Required for Flutter project testing - DO NOT REMOVE
   flutter_lints: ^5.0.0 # CRITICAL: Required for code quality - DO NOT REMOVE
-
 flutter:
   uses-material-design: true # CRITICAL: Required for Material icon font - DO NOT REMOVE
   assets:
