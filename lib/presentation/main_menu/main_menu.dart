@@ -132,7 +132,7 @@ class _MainMenuState extends State<MainMenu>
     _fadeController.dispose();
     _timer?.cancel();
     _profileService.profileListenable.removeListener(_profileListener);
-    unawaited(_dailyChallengeService.dispose());
+    _dailyChallengeService.dispose();
     super.dispose();
   }
 
