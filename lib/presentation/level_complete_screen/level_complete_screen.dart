@@ -376,7 +376,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                     (route) => false,
                   );
                 },
-                child: const Text('Back to Main Menu'),
+                child: const Text('Return to Main Menu'),
               ),
             ],
           ),
