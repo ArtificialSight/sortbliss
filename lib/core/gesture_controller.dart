@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -26,6 +28,10 @@ class GestureController extends ChangeNotifier {
   CameraController? _cameraController;
   bool _cameraEnabled = false;
   bool _gestureDetectionActive = false;
+  bool _cameraPermissionGranted = false;
+  bool _microphonePermissionGranted = false;
+  String? _cameraPermissionMessage;
+  String? _speechPermissionMessage;
 
   // Sensor data for tilt controls
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
@@ -62,6 +68,10 @@ class GestureController extends ChangeNotifier {
   double get currentTiltX => _currentTiltX;
   double get currentTiltY => _currentTiltY;
   String get lastWords => _lastWords;
+  bool get cameraPermissionGranted => _cameraPermissionGranted;
+  bool get microphonePermissionGranted => _microphonePermissionGranted;
+  String? get cameraPermissionMessage => _cameraPermissionMessage;
+  String? get speechPermissionMessage => _speechPermissionMessage;
 
   // Initialize all gesture and accessibility systems
   Future<void> initialize() async {
@@ -75,6 +85,12 @@ class GestureController extends ChangeNotifier {
   // Speech-to-text initialization
   Future<void> _initializeSpeechToText() async {
     try {
+      final hasPermission = await _ensureSpeechPermissions();
+      if (!hasPermission) {
+        _speechEnabled = false;
+        return;
+      }
+
       _speechEnabled = await _speechToText.initialize(
         onStatus: (status) => print('Speech status: $status'),
         onError: (error) => print('Speech error: $error'),
@@ -151,7 +167,19 @@ class GestureController extends ChangeNotifier {
 
   // Voice command system
   Future<void> startListening() async {
-    if (!_speechEnabled || _isListening) return;
+    if (_isListening) return;
+
+    final hasPermission = await _ensureSpeechPermissions();
+    if (!hasPermission) {
+      _speechEnabled = false;
+      return;
+    }
+
+    if (!_speechEnabled) {
+      await _initializeSpeechToText();
+    }
+
+    if (!_speechEnabled) return;
 
     try {
       await _speechToText.listen(
@@ -283,6 +311,13 @@ class GestureController extends ChangeNotifier {
     if (_cameraEnabled) return;
 
     try {
+      final hasPermission = await _ensureCameraPermission();
+      if (!hasPermission) {
+        _cameraEnabled = false;
+        notifyListeners();
+        return;
+      }
+
       final cameras = await availableCameras();
       if (cameras.isNotEmpty) {
         _cameraController = CameraController(
@@ -294,15 +329,23 @@ class GestureController extends ChangeNotifier {
         await _cameraController!.initialize();
         _cameraEnabled = true;
         print('Camera initialized for gesture recognition');
+        notifyListeners();
       }
     } catch (e) {
       print('Camera initialization error: $e');
       _cameraEnabled = false;
+      notifyListeners();
     }
   }
 
   Future<void> startGestureDetection() async {
-    if (!_cameraEnabled || _gestureDetectionActive) return;
+    if (_gestureDetectionActive) return;
+
+    if (!_cameraEnabled) {
+      await initializeCamera();
+    }
+
+    if (!_cameraEnabled) return;
 
     _gestureDetectionActive = true;
     // Basic gesture detection would be implemented here
@@ -394,5 +437,91 @@ class GestureController extends ChangeNotifier {
     }
 
     super.dispose();
+  }
+
+  bool _permissionStatusAllowsUse(PermissionStatus status) {
+    return status.isGranted || status.isLimited || status.isProvisional;
+  }
+
+  Future<bool> _ensureCameraPermission() async {
+    PermissionStatus status = await Permission.camera.status;
+
+    if (!_permissionStatusAllowsUse(status)) {
+      status = await Permission.camera.request();
+    }
+
+    if (_permissionStatusAllowsUse(status)) {
+      _updateCameraPermissionState(true, null);
+      return true;
+    }
+
+    final bool permanentlyDenied = status.isPermanentlyDenied;
+    final bool restricted = status.isRestricted;
+    final message = permanentlyDenied
+        ? 'Camera access permanently denied. Camera gestures are disabled until permissions are enabled in system settings.'
+        : restricted
+            ? 'Camera access is restricted on this device. Camera gestures are disabled.'
+            : 'Camera access denied. Camera gestures are disabled.';
+    _updateCameraPermissionState(false, message);
+    return false;
+  }
+
+  Future<bool> _ensureSpeechPermissions() async {
+    PermissionStatus microphoneStatus = await Permission.microphone.status;
+
+    if (!_permissionStatusAllowsUse(microphoneStatus)) {
+      microphoneStatus = await Permission.microphone.request();
+    }
+
+    PermissionStatus speechStatus = PermissionStatus.granted;
+    final bool supportsSpeechPermission = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS);
+
+    if (supportsSpeechPermission) {
+      speechStatus = await Permission.speech.status;
+      if (!_permissionStatusAllowsUse(speechStatus)) {
+        speechStatus = await Permission.speech.request();
+      }
+    }
+
+    final bool granted =
+        _permissionStatusAllowsUse(microphoneStatus) &&
+            _permissionStatusAllowsUse(speechStatus);
+
+    if (granted) {
+      _updateSpeechPermissionState(true, null);
+      return true;
+    }
+
+    final bool permanentlyDenied =
+        microphoneStatus.isPermanentlyDenied || speechStatus.isPermanentlyDenied;
+    final bool restricted =
+        microphoneStatus.isRestricted || speechStatus.isRestricted;
+    final message = permanentlyDenied
+        ? 'Microphone or speech recognition access permanently denied. Voice commands are disabled until permissions are enabled in system settings.'
+        : restricted
+            ? 'Microphone or speech recognition access is restricted on this device. Voice commands are disabled.'
+            : 'Microphone or speech recognition access denied. Voice commands are disabled.';
+    _updateSpeechPermissionState(false, message);
+    return false;
+  }
+
+  void _updateCameraPermissionState(bool granted, String? message) {
+    if (_cameraPermissionGranted != granted ||
+        _cameraPermissionMessage != message) {
+      _cameraPermissionGranted = granted;
+      _cameraPermissionMessage = message;
+      notifyListeners();
+    }
+  }
+
+  void _updateSpeechPermissionState(bool granted, String? message) {
+    if (_microphonePermissionGranted != granted ||
+        _speechPermissionMessage != message) {
+      _microphonePermissionGranted = granted;
+      _speechPermissionMessage = message;
+      notifyListeners();
+    }
   }
 }
