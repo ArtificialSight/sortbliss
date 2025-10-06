@@ -1,6 +1,8 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
+import 'audio_asset_availability.dart';
+
 class AudioManager {
   static final AudioManager _instance = AudioManager._internal();
   factory AudioManager() => _instance;
@@ -9,6 +11,10 @@ class AudioManager {
   // Audio players for different types of sounds
   final AudioPlayer _soundEffectsPlayer = AudioPlayer();
   final AudioPlayer _musicPlayer = AudioPlayer();
+
+  final AudioAssetAvailability _assetAvailability =
+      AudioAssetAvailability.instance;
+  bool _missingAssetsDetected = false;
 
   // Sound state management
   bool _soundEnabled = true;
@@ -49,19 +55,7 @@ class AudioManager {
   Future<void> playBackgroundMusic() async {
     if (!_musicEnabled || _isMusicPlaying) return;
 
-    try {
-      // Using asset source for ambient game music
-      // Note: In a real app, you'd add these audio files to assets/audio/
-      await _musicPlayer.play(
-        AssetSource('audio/ambient_background.mp3'),
-        volume: _musicVolume,
-      );
-      _isMusicPlaying = true;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Background music play error: $e - Using silent mode');
-      }
-    }
+    await _playMusicAsset('audio/ambient_background.mp3');
   }
 
   // Stop background music
@@ -109,17 +103,7 @@ class AudioManager {
 
   // Private helper method for sound effects
   Future<void> _playSoundEffect(String soundFile) async {
-    try {
-      await _soundEffectsPlayer.play(
-        AssetSource('audio/$soundFile'),
-        volume: _soundVolume,
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print('Sound effect error for $soundFile: $e - Continuing silently');
-      }
-      // Fail gracefully - game continues without sound
-    }
+    await _playEffectAsset('audio/$soundFile');
   }
 
   // Settings methods
@@ -159,5 +143,71 @@ class AudioManager {
         print('Audio Manager dispose error: $e');
       }
     }
+  }
+
+  Future<void> _playMusicAsset(String assetPath) async {
+    if (!await _ensureAssetAvailable(assetPath)) {
+      return;
+    }
+
+    try {
+      await _musicPlayer.play(
+        AssetSource(assetPath),
+        volume: _musicVolume,
+      );
+      _isMusicPlaying = true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Background music play error: $e - Using silent mode');
+      }
+    }
+  }
+
+  Future<void> _playEffectAsset(String assetPath) async {
+    if (!await _ensureAssetAvailable(assetPath)) {
+      return;
+    }
+
+    try {
+      await _soundEffectsPlayer.play(
+        AssetSource(assetPath),
+        volume: _soundVolume,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Sound effect error for $assetPath: $e - Continuing silently');
+      }
+    }
+  }
+
+  Future<bool> _ensureAssetAvailable(String assetPath) async {
+    if (_missingAssetsDetected) {
+      return false;
+    }
+
+    final exists = await _assetAvailability.exists(assetPath);
+    if (!exists) {
+      await _handleMissingAssets();
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _handleMissingAssets() async {
+    if (_missingAssetsDetected) {
+      return;
+    }
+
+    _missingAssetsDetected = true;
+    _soundEnabled = false;
+    _musicEnabled = false;
+    _isMusicPlaying = false;
+
+    try {
+      await _musicPlayer.stop();
+      await _soundEffectsPlayer.stop();
+    } catch (_) {}
+
+    _assetAvailability.notifyMissingAssets();
   }
 }

@@ -31,6 +31,7 @@ dependencies:
   speech_to_text: ^7.0.0     # Voice command recognition and accessibility features
   flutter_tts: ^4.2.3        # Text-to-speech functionality supporting iOS, macOS, Android, Web, and Windows
   camera: ^0.11.2            # Camera access and gesture recognition capabilities
+  permission_handler: ^11.3.1 # Runtime permission flow for camera and microphone access
   vector_math: ^2.1.4        # Advanced 3D mathematical operations and transformations
   collection: ^1.19.1        # Enhanced collections and utilities for data structure operations
   flutter_secure_storage: ^9.2.2 # Secure storage of sensitive user data

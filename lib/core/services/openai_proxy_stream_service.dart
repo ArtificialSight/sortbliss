@@ -30,7 +30,7 @@ class OpenAiProxyStreamService {
 
     aiDebug('[proxy-stream] start messages=${messages.length}');
     
-    final response = await _http.post<String>(
+    final response = await _http.post<ResponseBody>(
       '$functionsUrl/functions/v1/$edgeFunction',
       data: jsonEncode({
         'messages': messages.map((m) => m.toJson()).toList(),
@@ -47,36 +47,37 @@ class OpenAiProxyStreamService {
       ),
     );
 
-    final stream = response.data;
-    if (stream is! Stream<List<int>>) {
+    final body = response.data;
+    final byteStream = body?.stream;
+    if (byteStream == null) {
       throw AIResponseParsingError('Expected byte stream');
     }
 
-    await for (final chunk in stream) {
-      final text = utf8.decode(chunk);
-      // Explicitly cast to List<String> to ensure non-null type
-      final lines = LineSplitter().convert(text) as List<String>;
-      
-      for (final line in lines) {
-        if (line.startsWith('data:')) {
-          final payload = line.substring(5).trim();
-          if (payload == '[DONE]') return;
-          if (payload.isEmpty) continue;
+    final lineStream = byteStream
+        .transform(utf8.decoder)
+        .transform(const LineSplitter());
 
-          try {
-            final jsonData = jsonDecode(payload) as Map<String, dynamic>;
-            final choices = jsonData['choices'] as List<dynamic>?;
-            if (choices == null || choices.isEmpty) continue;
+    await for (final rawLine in lineStream) {
+      final line = rawLine.trimRight();
+      if (!line.startsWith('data:')) continue;
 
-            final delta = (choices.first as Map<String, dynamic>)['delta'] as Map<String, dynamic>?;
-            final token = delta?['content'] as String?;
-            if (token != null && token.isNotEmpty) {
-              yield token;
-            }
-          } catch (_) {
-            // Swallow malformed chunk
-          }
+      final payload = line.substring(5).trimLeft();
+      if (payload.isEmpty) continue;
+      if (payload == '[DONE]') return;
+
+      try {
+        final jsonData = jsonDecode(payload) as Map<String, dynamic>;
+        final choices = jsonData['choices'] as List<dynamic>?;
+        if (choices == null || choices.isEmpty) continue;
+
+        final delta = (choices.first as Map<String, dynamic>)['delta']
+            as Map<String, dynamic>?;
+        final token = delta?['content'] as String?;
+        if (token != null && token.isNotEmpty) {
+          yield token;
         }
+      } catch (_) {
+        // Swallow malformed chunk
       }
     }
   }

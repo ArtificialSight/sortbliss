@@ -4,6 +4,7 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 import '../../core/app_export.dart';
+import '../../core/config/environment.dart';
 import '../../core/services/daily_challenge_service.dart';
 import '../../core/services/player_profile_service.dart';
 import '../../theme/app_theme.dart';
@@ -60,7 +61,10 @@ class _MainMenuState extends State<MainMenu>
       });
     }));
 
-    _dailyChallengeService = DailyChallengeService();
+    _dailyChallengeService = DailyChallengeService(
+      supabaseRestEndpoint: Environment.supabaseDailyChallengeEndpoint,
+      supabaseAnonKey: Environment.supabaseAnonKeyOrNull,
+    );
 
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),

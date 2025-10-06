@@ -2,6 +2,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 
+import 'audio_asset_availability.dart';
+
 class PremiumAudioManager {
   static final PremiumAudioManager _instance = PremiumAudioManager._internal();
   factory PremiumAudioManager() => _instance;
@@ -13,6 +15,10 @@ class PremiumAudioManager {
   final AudioPlayer _spatialPlayer = AudioPlayer();
   final AudioPlayer _voicePlayer = AudioPlayer();
   final AudioPlayer _ambientPlayer = AudioPlayer();
+
+  final AudioAssetAvailability _assetAvailability =
+      AudioAssetAvailability.instance;
+  bool _missingAssetsDetected = false;
 
   // Audio state management
   bool _soundEnabled = true;
@@ -109,21 +115,37 @@ class PremiumAudioManager {
       _currentMusicTheme = 'peaceful';
     }
 
+    final musicAsset = 'audio/music/$musicTrack';
+    if (!await _ensureAssetAvailable(musicAsset)) {
+      return;
+    }
+
     try {
       await _musicPlayer.play(
-        AssetSource('audio/music/$musicTrack'),
+        AssetSource(musicAsset),
         volume: _musicVolume * _masterVolume,
       );
       _isMusicPlaying = true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Adaptive background music error: $e - Continuing silently');
+      }
+      return;
+    }
 
-      // Start ambient layer
+    final ambientAsset = 'audio/ambient/nature_base.mp3';
+    if (!await _ensureAssetAvailable(ambientAsset)) {
+      return;
+    }
+
+    try {
       await _ambientPlayer.play(
-        AssetSource('audio/ambient/nature_base.mp3'),
+        AssetSource(ambientAsset),
         volume: _ambientVolume * _masterVolume,
       );
     } catch (e) {
       if (kDebugMode) {
-        print('Adaptive background music error: $e - Continuing silently');
+        print('Adaptive ambient layer error: $e');
       }
     }
   }
@@ -148,8 +170,13 @@ class PremiumAudioManager {
       _currentMusicTheme = 'peaceful';
     }
 
+    final assetPath = 'audio/music/$newTrack';
+    if (!await _ensureAssetAvailable(assetPath)) {
+      return;
+    }
+
     try {
-      await _musicPlayer.play(AssetSource('audio/music/$newTrack'));
+      await _musicPlayer.play(AssetSource(assetPath));
 
       // Fade in new track
       for (double volume = 0.0;
@@ -173,19 +200,37 @@ class PremiumAudioManager {
     final pan = _containerPans[containerId] ?? 0.0;
     String soundFile = 'container_${containerId}_$soundType.mp3';
 
+    final spatialAsset = 'audio/spatial/$soundFile';
+    if (await _ensureAssetAvailable(spatialAsset)) {
+      try {
+        await _spatialPlayer.play(
+          AssetSource(spatialAsset),
+          volume: _effectsVolume * _masterVolume,
+          balance: pan,
+        );
+        return;
+      } catch (e) {
+        if (kDebugMode) {
+          print('Spatial sound error for $spatialAsset: $e');
+        }
+      }
+    }
+
+    final fallbackAsset = 'audio/effects/generic_$soundType.mp3';
+    if (!await _ensureAssetAvailable(fallbackAsset)) {
+      return;
+    }
+
     try {
       await _spatialPlayer.play(
-        AssetSource('audio/spatial/$soundFile'),
+        AssetSource(fallbackAsset),
         volume: _effectsVolume * _masterVolume,
         balance: pan,
       );
     } catch (e) {
-      // Fallback to generic sound
-      await _spatialPlayer.play(
-        AssetSource('audio/effects/generic_$soundType.mp3'),
-        volume: _effectsVolume * _masterVolume,
-        balance: pan,
-      );
+      if (kDebugMode) {
+        print('Fallback spatial sound error for $fallbackAsset: $e');
+      }
     }
   }
 
@@ -200,10 +245,15 @@ class PremiumAudioManager {
       effectSound = 'success_streak.mp3';
     }
 
+    final effectAsset = 'audio/effects/$effectSound';
+    if (!await _ensureAssetAvailable(effectAsset)) {
+      return;
+    }
+
     try {
       // Play sound effect
       await _effectsPlayer.play(
-        AssetSource('audio/effects/$effectSound'),
+        AssetSource(effectAsset),
         volume: _effectsVolume * _masterVolume,
       );
 
@@ -235,10 +285,15 @@ class PremiumAudioManager {
       voiceLine = 'voice_${randomLine.toLowerCase().replaceAll('!', '')}.mp3';
     }
 
+    final assetPath = 'audio/voice/$voiceLine';
+    if (!await _ensureAssetAvailable(assetPath)) {
+      return;
+    }
+
     try {
       await Future.delayed(const Duration(milliseconds: 200)); // Slight delay
       await _voicePlayer.play(
-        AssetSource('audio/voice/$voiceLine'),
+        AssetSource(assetPath),
         volume: _voiceVolume * _masterVolume,
       );
     } catch (e) {
@@ -259,9 +314,14 @@ class PremiumAudioManager {
     final voiceLine =
         'voice_${randomLine.toLowerCase().replaceAll('!', '').replaceAll(' ', '_')}.mp3';
 
+    final assetPath = 'audio/voice/$voiceLine';
+    if (!await _ensureAssetAvailable(assetPath)) {
+      return;
+    }
+
     try {
       await _voicePlayer.play(
-        AssetSource('audio/voice/$voiceLine'),
+        AssetSource(assetPath),
         volume: _voiceVolume * _masterVolume,
       );
     } catch (e) {
@@ -284,6 +344,11 @@ class PremiumAudioManager {
       fanfareTrack = 'level_complete_special.mp3';
     }
 
+    final fanfareAsset = 'audio/fanfares/$fanfareTrack';
+    if (!await _ensureAssetAvailable(fanfareAsset)) {
+      return;
+    }
+
     try {
       // Fade out background music
       for (double volume = _musicVolume * _masterVolume;
@@ -295,15 +360,19 @@ class PremiumAudioManager {
 
       // Play fanfare
       await _effectsPlayer.play(
-        AssetSource('audio/fanfares/$fanfareTrack'),
+        AssetSource(fanfareAsset),
         volume: _effectsVolume * _masterVolume,
       );
 
       // Play victory voice line
       if (_voiceEnabled && stars >= 2) {
+        const voiceAsset = 'audio/voice/voice_level_complete.mp3';
+        if (!await _ensureAssetAvailable(voiceAsset)) {
+          return;
+        }
         await Future.delayed(const Duration(milliseconds: 800));
         await _voicePlayer.play(
-          AssetSource('audio/voice/voice_level_complete.mp3'),
+          AssetSource(voiceAsset),
           volume: _voiceVolume * _masterVolume,
         );
       }
@@ -325,10 +394,15 @@ class PremiumAudioManager {
     await playSpatialContainerSound(containerId, 'error');
 
     // Add a subtle shake sound for tactile feedback
+    const shakeAsset = 'audio/effects/container_shake.mp3';
+    if (!await _ensureAssetAvailable(shakeAsset)) {
+      return;
+    }
+
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       await _effectsPlayer.play(
-        AssetSource('audio/effects/container_shake.mp3'),
+        AssetSource(shakeAsset),
         volume: _effectsVolume * _masterVolume * 0.7,
       );
     } catch (e) {
@@ -350,21 +424,39 @@ class PremiumAudioManager {
             ? 0.5
             : 0.0;
 
+    const dopplerAsset = 'audio/effects/whoosh_doppler.mp3';
+    if (await _ensureAssetAvailable(dopplerAsset)) {
+      try {
+        await _spatialPlayer.play(
+          AssetSource(dopplerAsset),
+          volume: _effectsVolume * _masterVolume,
+          balance: pan,
+        );
+        // Note: AudioPlayer doesn't support pitch adjustment directly in Flutter
+        // This would require platform-specific implementation
+        return;
+      } catch (e) {
+        if (kDebugMode) {
+          print('Advanced whoosh error: $e');
+        }
+      }
+    }
+
+    const fallbackAsset = 'audio/effects/whoosh_basic.mp3';
+    if (!await _ensureAssetAvailable(fallbackAsset)) {
+      return;
+    }
+
     try {
-      await _spatialPlayer.play(
-        AssetSource('audio/effects/whoosh_doppler.mp3'),
-        volume: _effectsVolume * _masterVolume,
-        balance: pan,
-      );
-      // Note: AudioPlayer doesn't support pitch adjustment directly in Flutter
-      // This would require platform-specific implementation
-    } catch (e) {
-      // Fallback to basic whoosh
       await _effectsPlayer.play(
-        AssetSource('audio/effects/whoosh_basic.mp3'),
+        AssetSource(fallbackAsset),
         volume: _effectsVolume * _masterVolume,
         balance: pan,
       );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Fallback whoosh error: $e');
+      }
     }
   }
 
@@ -372,26 +464,39 @@ class PremiumAudioManager {
   Future<void> playLayeredSparkleSound(int intensity) async {
     if (!_soundEnabled) return;
 
+    const baseAsset = 'audio/effects/sparkle_base.mp3';
+    if (!await _ensureAssetAvailable(baseAsset)) {
+      return;
+    }
+
     try {
       // Base sparkle
       await _effectsPlayer.play(
-        AssetSource('audio/effects/sparkle_base.mp3'),
+        AssetSource(baseAsset),
         volume: _effectsVolume * _masterVolume,
       );
 
       // Additional layers based on intensity
       if (intensity >= 2) {
+        const layerTwoAsset = 'audio/effects/sparkle_layer2.mp3';
+        if (!await _ensureAssetAvailable(layerTwoAsset)) {
+          return;
+        }
         await Future.delayed(const Duration(milliseconds: 150));
         await _spatialPlayer.play(
-          AssetSource('audio/effects/sparkle_layer2.mp3'),
+          AssetSource(layerTwoAsset),
           volume: _effectsVolume * _masterVolume * 0.8,
         );
       }
 
       if (intensity >= 3) {
+        const layerThreeAsset = 'audio/effects/sparkle_layer3.mp3';
+        if (!await _ensureAssetAvailable(layerThreeAsset)) {
+          return;
+        }
         await Future.delayed(const Duration(milliseconds: 100));
         await _ambientPlayer.play(
-          AssetSource('audio/effects/sparkle_layer3.mp3'),
+          AssetSource(layerThreeAsset),
           volume: _effectsVolume * _masterVolume * 0.6,
         );
       }
@@ -422,17 +527,35 @@ class PremiumAudioManager {
         break;
     }
 
+    final themedAsset = 'audio/effects/themes/$tapSound';
+    if (await _ensureAssetAvailable(themedAsset)) {
+      try {
+        await _effectsPlayer.play(
+          AssetSource(themedAsset),
+          volume: _effectsVolume * _masterVolume * 0.9,
+        );
+        return;
+      } catch (e) {
+        if (kDebugMode) {
+          print('Theme tap sound error for $themedAsset: $e');
+        }
+      }
+    }
+
+    const fallbackAsset = 'audio/effects/button_tap.mp3';
+    if (!await _ensureAssetAvailable(fallbackAsset)) {
+      return;
+    }
+
     try {
-      await _effectsPlayer.play(
-        AssetSource('audio/effects/themes/$tapSound'),
-        volume: _effectsVolume * _masterVolume * 0.9,
-      );
-    } catch (e) {
-      // Fallback to default
       await _effectsPlayer.play(
         AssetSource('audio/effects/button_tap.mp3'),
         volume: _effectsVolume * _masterVolume,
       );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Fallback tap sound error: $e');
+      }
     }
   }
 
@@ -465,6 +588,38 @@ class PremiumAudioManager {
         print('Update volumes error: $e');
       }
     }
+  }
+
+  Future<bool> _ensureAssetAvailable(String assetPath) async {
+    if (_missingAssetsDetected) {
+      return false;
+    }
+
+    final exists = await _assetAvailability.exists(assetPath);
+    if (!exists) {
+      await _handleMissingAssets();
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> _handleMissingAssets() async {
+    if (_missingAssetsDetected) {
+      return;
+    }
+
+    _missingAssetsDetected = true;
+    _soundEnabled = false;
+    _musicEnabled = false;
+    _voiceEnabled = false;
+    _isMusicPlaying = false;
+
+    try {
+      await stopAllAudio();
+    } catch (_) {}
+
+    _assetAvailability.notifyMissingAssets(isPremium: true);
   }
 
   // Settings methods

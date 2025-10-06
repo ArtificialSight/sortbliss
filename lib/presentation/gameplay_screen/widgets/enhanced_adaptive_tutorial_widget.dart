@@ -56,6 +56,8 @@ class _EnhancedAdaptiveTutorialWidgetState
   final PremiumAudioManager _audioManager = PremiumAudioManager();
   final HapticManager _hapticManager = HapticManager();
   final GestureController _gestureController = GestureController();
+  String? _lastSpeechPermissionMessage;
+  String? _lastCameraPermissionMessage;
 
   int _currentStepIndex = 0;
   bool _isVisible = true;
@@ -72,6 +74,11 @@ class _EnhancedAdaptiveTutorialWidgetState
     _generateTutorialSteps();
     _initializeAnimations();
     _startTutorial();
+    _gestureController.addListener(_handlePermissionUpdates);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _handlePermissionUpdates();
+    });
   }
 
   void _calculateAdaptiveDelay() {
@@ -157,6 +164,40 @@ class _EnhancedAdaptiveTutorialWidgetState
         },
       ];
     }
+  }
+
+  void _handlePermissionUpdates() {
+    if (!mounted) return;
+
+    final speechMessage = _gestureController.speechPermissionMessage;
+    if (speechMessage != _lastSpeechPermissionMessage) {
+      _lastSpeechPermissionMessage = speechMessage;
+      if (speechMessage != null) {
+        _showPermissionSnackBar(speechMessage);
+      }
+    }
+
+    final cameraMessage = _gestureController.cameraPermissionMessage;
+    if (cameraMessage != _lastCameraPermissionMessage) {
+      _lastCameraPermissionMessage = cameraMessage;
+      if (cameraMessage != null) {
+        _showPermissionSnackBar(cameraMessage);
+      }
+    }
+  }
+
+  void _showPermissionSnackBar(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(message),
+          duration: const Duration(seconds: 4),
+        ),
+      );
   }
 
   void _initializeAnimations() {
@@ -340,6 +381,7 @@ class _EnhancedAdaptiveTutorialWidgetState
 
   @override
   void dispose() {
+    _gestureController.removeListener(_handlePermissionUpdates);
     _highlightController.dispose();
     _pulseController.dispose();
     _textController.dispose();
