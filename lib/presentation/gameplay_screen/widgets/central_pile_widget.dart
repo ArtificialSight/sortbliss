@@ -1,32 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sizer/sizer.dart';
-import '../../../data/models/sort_item.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../shared/widgets/custom_icon_widget.dart';
-import '../gameplay_cubit/gameplay_cubit.dart';
+
+import 'package:sortbliss/core/app_export.dart';
+import 'package:sortbliss/presentation/gameplay_screen/models/sort_item.dart';
 
 class CentralPileWidget extends StatelessWidget {
-  const CentralPileWidget({Key? key}) : super(key: key);
+  const CentralPileWidget({
+    super.key,
+    this.items = const <SortItem>[],
+    this.showTutorial = false,
+  });
+
+  /// Items currently in the central pile.
+  final List<SortItem> items;
+
+  /// Whether the tutorial overlay should be visible.
+  final bool showTutorial;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<GameplayCubit, GameplayState>(
-      builder: (context, state) {
-        if (state is GameplayPlaying) {
-          return _buildCentralPile(context, state);
-        }
-        return const SizedBox.shrink();
-      },
-    );
+    return _buildCentralPile(context);
   }
 
-  Widget _buildCentralPile(BuildContext context, GameplayPlaying state) {
+  Widget _buildCentralPile(BuildContext context) {
     // Extract opacity values to descriptive variables
     const double shadowOpacity = 0.3;
     const double containerOpacity = 0.8;
-    
+
     return Container(
       height: 35.h,
       width: 80.w,
@@ -43,17 +43,19 @@ class CentralPileWidget extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          if (state.items.isEmpty)
-            _buildEmptyPile()
+          if (items.isEmpty)
+            _buildEmptyPile(context)
           else
-            _buildItemPile(state.items),
-          if (state.showTutorial) _buildTutorialOverlay(),
+            _buildItemPile(context, items),
+          if (showTutorial) _buildTutorialOverlay(context),
         ],
       ),
     );
   }
-  
-  Widget _buildItemPile(List<SortItem> items) {
+
+  Widget _buildItemPile(BuildContext context, List<SortItem> items) {
+    final textTheme = Theme.of(context).textTheme;
+
     return ListView.builder(
       padding: EdgeInsets.all(2.w),
       itemCount: items.length,
@@ -71,27 +73,28 @@ class CentralPileWidget extends StatelessWidget {
               ),
               title: Text(
                 item.name,
-                style: AppTheme.lightTheme.textTheme.bodyLarge,
+                style: textTheme.bodyLarge,
               ),
               subtitle: Text(
                 'Value: ${item.sortValue}',
-                style: AppTheme.lightTheme.textTheme.bodySmall,
+                style: textTheme.bodySmall,
               ),
-              onTap: () {
-                // Handle item tap
-              },
+              onTap: item.onTap,
             ),
           ),
         );
       },
     );
   }
-  Widget _buildTutorialOverlay() {
+
+  Widget _buildTutorialOverlay(BuildContext context) {
     // Extract opacity values to descriptive variables
     const double tutorialBackgroundOpacity = 0.1;
     const double tutorialContainerOpacity = 0.7;
     const double tutorialBorderOpacity = 0.5;
-    
+
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       decoration: BoxDecoration(
         gradient: RadialGradient(
@@ -125,7 +128,7 @@ class CentralPileWidget extends StatelessWidget {
               SizedBox(height: 1.h),
               Text(
                 'Drag items to sort them!',
-                style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                style: textTheme.titleMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
@@ -137,10 +140,13 @@ class CentralPileWidget extends StatelessWidget {
       ),
     );
   }
-  Widget _buildEmptyPile() {
+
+  Widget _buildEmptyPile(BuildContext context) {
     // Extract opacity values to descriptive variables
     const double emptyPileOpacity = 0.6;
-    
+
+    final textTheme = Theme.of(context).textTheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -153,23 +159,23 @@ class CentralPileWidget extends StatelessWidget {
             ),
             child: CustomIconWidget(
               iconName: 'inbox',
-              color: Colors.grey[600]!,
+              color: Colors.grey.shade600,
               size: 12.w,
             ),
           ),
           SizedBox(height: 2.h),
           Text(
             'Central Pile Empty',
-            style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-              color: Colors.grey[600],
+            style: textTheme.titleLarge?.copyWith(
+              color: Colors.grey.shade600,
               fontWeight: FontWeight.w600,
             ),
           ),
           SizedBox(height: 1.h),
           Text(
             'Items will appear here during sorting',
-            style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
+            style: textTheme.bodyMedium?.copyWith(
+              color: Colors.grey.shade500,
             ),
             textAlign: TextAlign.center,
           ),
