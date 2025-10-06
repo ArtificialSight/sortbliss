@@ -361,7 +361,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
               ),
               const SizedBox(height: 16),
               const Text(
-                'Level details were missing. Please return to the main menu and try again.',
+                'We couldn\'t load this level. Please return to the main menu and try again.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
