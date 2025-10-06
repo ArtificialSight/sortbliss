@@ -27,7 +27,7 @@ class AppRoutes {
         return LevelCompleteScreen(levelData: args['levelData']);
       }
       // Provide default levelData if not specified
-      return const LevelCompleteScreen(levelData: {});
+      return const LevelCompleteScreen(levelData: <String, dynamic>{});
     },
     gameplay: (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
@@ -38,7 +38,7 @@ class AppRoutes {
         return GameplayScreen(levelData: args['levelData']);
       }
       // Provide default level data if no arguments are passed
-      return const GameplayScreen(levelData: null);
+      return const GameplayScreen();
     },
     mainMenu: (context) => const MainMenu(),
     achievements: (context) {

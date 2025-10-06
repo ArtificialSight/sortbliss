@@ -184,6 +184,10 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.levelData.isEmpty) {
+      return _buildMissingLevelDataFallback(context);
+    }
+
     return Scaffold(
       backgroundColor: Colors.black.withOpacity(0.8),
       body: AnimatedBuilder(
@@ -337,6 +341,46 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildMissingLevelDataFallback(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.redAccent,
+                size: 72,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Level details were missing. Please return to the main menu and try again.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/main-menu',
+                    (route) => false,
+                  );
+                },
+                child: const Text('Back to Main Menu'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
