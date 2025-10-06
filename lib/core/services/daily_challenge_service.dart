@@ -425,7 +425,8 @@ class DailyChallengeService {
     }
     _isDisposed = true;
     await _challengeController.close();
-    await _httpClient.close(force: true);
+    _httpClient.close(force: true);
+    return;
   }
 
   Future<DailyChallengePayload?> _fetchDailyChallengeFromSupabase() async {
