@@ -343,6 +343,7 @@ class _EnhancedAdaptiveTutorialWidgetState
     _highlightController.dispose();
     _pulseController.dispose();
     _textController.dispose();
+    _gestureController.dispose();
     super.dispose();
   }
 

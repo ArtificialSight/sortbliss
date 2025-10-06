@@ -6,6 +6,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:camera/camera.dart';
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:meta/meta.dart';
 
 class GestureController extends ChangeNotifier {
   static final GestureController _instance = GestureController._internal();
@@ -49,6 +50,9 @@ class GestureController extends ChangeNotifier {
   bool _reduceMotionEnabled = false;
   double _gameSpeed = 1.0;
 
+  Future<void> Function()? _initializationOverride;
+  bool _isTestMode = false;
+
   // Getters
   bool get speechEnabled => _speechEnabled;
   bool get isListening => _isListening;
@@ -65,6 +69,11 @@ class GestureController extends ChangeNotifier {
 
   // Initialize all gesture and accessibility systems
   Future<void> initialize() async {
+    if (_initializationOverride != null) {
+      await _initializationOverride!.call();
+      return;
+    }
+
     await _initializeSpeechToText();
     await _initializeTextToSpeech();
     await _initializeSensors();
@@ -381,18 +390,53 @@ class GestureController extends ChangeNotifier {
   }
 
   // Cleanup
-  Future<void> dispose() async {
-    await stopListening();
-    await _flutterTts.stop();
-    await stopGestureDetection();
+  @override
+  void dispose() {
+    if (_isTestMode) {
+      _isListening = false;
+      _gestureDetectionActive = false;
+    } else {
+      unawaited(stopListening());
+      unawaited(_flutterTts.stop());
+      unawaited(stopGestureDetection());
+      final cameraController = _cameraController;
+      if (cameraController != null) {
+        unawaited(cameraController.dispose());
+        _cameraController = null;
+      }
+    }
 
-    _accelerometerSubscription?.cancel();
-    _gyroscopeSubscription?.cancel();
+    final accelerometerSubscription = _accelerometerSubscription;
+    if (accelerometerSubscription != null) {
+      unawaited(accelerometerSubscription.cancel());
+      _accelerometerSubscription = null;
+    }
 
-    if (_cameraController != null) {
-      await _cameraController!.dispose();
+    final gyroscopeSubscription = _gyroscopeSubscription;
+    if (gyroscopeSubscription != null) {
+      unawaited(gyroscopeSubscription.cancel());
+      _gyroscopeSubscription = null;
     }
 
     super.dispose();
+  }
+
+  @visibleForTesting
+  void setInitializationOverride(Future<void> Function()? override) {
+    _initializationOverride = override;
+  }
+
+  @visibleForTesting
+  void setSensorSubscriptionsForTesting({
+    StreamSubscription<AccelerometerEvent>? accelerometer,
+    StreamSubscription<GyroscopeEvent>? gyroscope,
+  }) {
+    _accelerometerSubscription = accelerometer;
+    _gyroscopeSubscription = gyroscope;
+  }
+
+  @visibleForTesting
+  void setTestMode(bool isTestMode) {
+    _isTestMode = isTestMode;
   }
 }

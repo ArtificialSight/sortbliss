@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:sizer/sizer.dart';
+import 'package:meta/meta.dart';
 
 import '../../../core/app_export.dart';
 import '../../../theme/app_theme.dart';
@@ -16,6 +18,7 @@ class AdaptiveTutorialWidget extends StatefulWidget {
   final List<String> completedActions;
   final Function(String) onActionCompleted;
   final Function() onTutorialCompleted;
+  final GestureController? gestureController;
 
   const AdaptiveTutorialWidget({
     Key? key,
@@ -25,6 +28,7 @@ class AdaptiveTutorialWidget extends StatefulWidget {
     required this.completedActions,
     required this.onActionCompleted,
     required this.onTutorialCompleted,
+    this.gestureController,
   }) : super(key: key);
 
   @override
@@ -45,11 +49,11 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
 
   final PremiumAudioManager _audioManager = PremiumAudioManager();
   final HapticManager _hapticManager = HapticManager();
-  final GestureController _gestureController = GestureController();
+  late final GestureController _gestureController;
 
   int _currentStepIndex = 0;
   bool _isVisible = true;
-  bool _voiceEnabled = true;
+  bool _voiceEnabled = false;
   bool _isWaitingForAction = false;
   double _adaptiveDelay = 1.0; // Adaptive delay based on user speed
 
@@ -58,10 +62,32 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
   @override
   void initState() {
     super.initState();
+    _gestureController = widget.gestureController ?? GestureController();
     _calculateAdaptiveDelay();
     _generateTutorialSteps();
     _initializeAnimations();
-    _startTutorial();
+    _initializeGestureController();
+  }
+
+  Future<void> _initializeGestureController() async {
+    try {
+      await _gestureController.initialize();
+      if (!mounted) return;
+      setState(() {
+        _voiceEnabled = _gestureController.ttsEnabled;
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Gesture controller initialization failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (!mounted) return;
+      setState(() {
+        _voiceEnabled = false;
+      });
+    } finally {
+      if (mounted) {
+        _startTutorial();
+      }
+    }
   }
 
   void _calculateAdaptiveDelay() {
@@ -322,8 +348,12 @@ class _AdaptiveTutorialWidgetState extends State<AdaptiveTutorialWidget>
     _highlightController.dispose();
     _pulseController.dispose();
     _textController.dispose();
+    _gestureController.dispose();
     super.dispose();
   }
+
+  @visibleForTesting
+  bool get voiceEnabledForTesting => _voiceEnabled;
 
   @override
   Widget build(BuildContext context) {
