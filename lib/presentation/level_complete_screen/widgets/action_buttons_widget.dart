@@ -123,7 +123,7 @@ class _ActionButtonsWidgetState extends State<ActionButtonsWidget>
   Widget _buildSecondaryButton({
     required String text,
     required VoidCallback onPressed,
-    required IconData icon,
+    required String iconName,
   }) {
     return SizedBox(
       width: double.infinity,
@@ -131,7 +131,7 @@ class _ActionButtonsWidgetState extends State<ActionButtonsWidget>
       child: OutlinedButton.icon(
         onPressed: onPressed,
         icon: CustomIconWidget(
-          iconName: icon.toString().split('.').last,
+          iconName: iconName,
           color: AppTheme.lightTheme.colorScheme.primary,
           size: 4.w,
         ),
@@ -229,7 +229,7 @@ class _ActionButtonsWidgetState extends State<ActionButtonsWidget>
                   child: _buildSecondaryButton(
                     text: 'Replay',
                     onPressed: widget.onReplayLevel,
-                    icon: Icons.replay,
+                    iconName: 'replay',
                   ),
                 ),
                 SizedBox(width: 3.w),
@@ -237,7 +237,7 @@ class _ActionButtonsWidgetState extends State<ActionButtonsWidget>
                   child: _buildSecondaryButton(
                     text: 'Share',
                     onPressed: widget.onShareScore,
-                    icon: Icons.share,
+                    iconName: 'share',
                   ),
                 ),
               ],
