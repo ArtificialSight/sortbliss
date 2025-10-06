@@ -5,6 +5,18 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 
+/// Error thrown when Supabase configuration is missing for the
+/// [DailyChallengeService].
+class MissingDailyChallengeConfigurationException implements Exception {
+  const MissingDailyChallengeConfigurationException(this.message);
+
+  final String message;
+
+  @override
+  String toString() =>
+      'MissingDailyChallengeConfigurationException: $message';
+}
+
 /// Lightweight representation of a reward attached to a daily challenge or
 /// weekly event.
 class ChallengeReward {
@@ -322,6 +334,10 @@ class DailyChallengeService {
         stackTrace: stackTrace,
         name: 'DailyChallengeService',
       );
+
+      if (error is MissingDailyChallengeConfigurationException) {
+        throw error;
+      }
     }
 
     if (payload == null) {
@@ -361,6 +377,10 @@ class DailyChallengeService {
         stackTrace: stackTrace,
         name: 'DailyChallengeService',
       );
+
+      if (error is MissingDailyChallengeConfigurationException) {
+        throw error;
+      }
     }
 
     schedule ??= await _loadRemoteConfigWeeklyEvents();
@@ -430,9 +450,7 @@ class DailyChallengeService {
   }
 
   Future<DailyChallengePayload?> _fetchDailyChallengeFromSupabase() async {
-    if (supabaseRestEndpoint == null || supabaseRestEndpoint!.isEmpty) {
-      return null;
-    }
+    _ensureSupabaseConfiguration();
 
     final response = await _httpClient.get<List<dynamic>>(
       supabaseRestEndpoint!,
@@ -468,9 +486,7 @@ class DailyChallengeService {
   }
 
   Future<WeeklyEventSchedule?> _fetchWeeklyEventsFromSupabase() async {
-    if (supabaseRestEndpoint == null || supabaseRestEndpoint!.isEmpty) {
-      return null;
-    }
+    _ensureSupabaseConfiguration();
 
     final uri = Uri.parse(supabaseRestEndpoint!);
     final path = uri.replace(path: '${uri.path}/weekly_events').toString();
@@ -694,6 +710,23 @@ class DailyChallengeService {
       case DateTime.sunday:
       default:
         return 'Serenity';
+    }
+  }
+
+  void _ensureSupabaseConfiguration() {
+    final missing = <String>[];
+    if (supabaseRestEndpoint == null || supabaseRestEndpoint!.isEmpty) {
+      missing.add('SUPABASE_DAILY_CHALLENGE_ENDPOINT');
+    }
+    if (supabaseAnonKey == null || supabaseAnonKey!.isEmpty) {
+      missing.add('SUPABASE_ANON_KEY');
+    }
+
+    if (missing.isNotEmpty) {
+      throw MissingDailyChallengeConfigurationException(
+        'Missing configuration: ${missing.join(', ')}. '
+        'Provide the required Supabase values before fetching remote data.',
+      );
     }
   }
 }
