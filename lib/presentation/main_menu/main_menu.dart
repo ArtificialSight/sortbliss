@@ -6,7 +6,6 @@ import 'package:sizer/sizer.dart';
 import '../../core/app_export.dart';
 import '../../core/services/daily_challenge_service.dart';
 import '../../core/services/player_profile_service.dart';
-import '../../core/services/analytics_service.dart';
 import '../../theme/app_theme.dart';
 import '../daily_challenge/daily_challenge_screen.dart';
 import '../achievements/achievements_screen.dart';
@@ -17,42 +16,6 @@ import './widgets/menu_action_button_widget.dart';
 import './widgets/play_button_widget.dart';
 import './widgets/player_stats_widget.dart';
 
-// Simple player profile data class
-class PlayerProfile {
-  final int currentLevel;
-  final double totalScore;
-  final List<String> achievements;
-  final double progressPercentage;
-  final int coinsEarned;
-  final int currentStreak;
-  final int levelsCompleted;
-
-  const PlayerProfile({
-    this.currentLevel = 1,
-    this.totalScore = 0.0,
-    this.achievements = const [],
-    this.progressPercentage = 0.0,
-    this.coinsEarned = 0,
-    this.currentStreak = 0,
-    this.levelsCompleted = 0,
-  });
-}
-
-// Simple daily challenge data class
-class DailyChallenge {
-  final String title;
-  final String description;
-  final int targetScore;
-  final bool isCompleted;
-
-  const DailyChallenge({
-    required this.title,
-    required this.description,
-    this.targetScore = 1000,
-    this.isCompleted = false,
-  });
-}
-
 class MainMenu extends StatefulWidget {
   const MainMenu({Key? key}) : super(key: key);
 
@@ -62,18 +25,43 @@ class MainMenu extends StatefulWidget {
 
 class _MainMenuState extends State<MainMenu>
     with TickerProviderStateMixin {
+  late final PlayerProfileService _profileService;
+  late final DailyChallengeService _dailyChallengeService;
+  late final VoidCallback _profileListener;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
-  
-  // Simplified profile management
-  PlayerProfile profile = const PlayerProfile();
-  DailyChallenge? dailyChallenge;
+
+  PlayerProfile profile = PlayerProfile.defaults;
+  DailyChallengePayload? dailyChallenge;
   Duration? dailyChallengeTimeRemaining;
   Timer? _timer;
+  bool _loadingDailyChallenge = true;
 
   @override
   void initState() {
     super.initState();
+    _profileService = PlayerProfileService.instance;
+    profile = _profileService.currentProfile;
+    _profileListener = () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        profile = _profileService.currentProfile;
+      });
+    };
+    _profileService.profileListenable.addListener(_profileListener);
+    unawaited(_profileService.ensureInitialized().then((_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        profile = _profileService.currentProfile;
+      });
+    }));
+
+    _dailyChallengeService = DailyChallengeService();
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -86,50 +74,56 @@ class _MainMenuState extends State<MainMenu>
       curve: Curves.easeInOut,
     ));
     _fadeController.forward();
-    
-    _initializeProfile();
-    _refreshDailyChallenge();
+
+    unawaited(_refreshDailyChallenge());
     _startTimer();
   }
 
-  void _initializeProfile() {
-    // Initialize with default values
-    setState(() {
-      profile = const PlayerProfile(
-        currentLevel: 1,
-        totalScore: 0.0,
-        achievements: [],
-        progressPercentage: 0.0,
-        coinsEarned: 0,
-        currentStreak: 0,
-        levelsCompleted: 0,
-      );
-    });
-  }
-
   void _startTimer() {
+    _timer?.cancel();
+    _updateTimeRemaining();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        // Update time remaining for daily challenge
-        setState(() {
-          dailyChallengeTimeRemaining = Duration(
-            hours: 23 - DateTime.now().hour,
-            minutes: 59 - DateTime.now().minute,
-            seconds: 59 - DateTime.now().second,
-          );
-        });
-      }
+      _updateTimeRemaining();
     });
   }
 
-  void _refreshDailyChallenge() {
+  Future<void> _refreshDailyChallenge() async {
     setState(() {
-      dailyChallenge = const DailyChallenge(
-        title: 'Daily Challenge',
-        description: 'Complete 5 levels today',
-        targetScore: 1000,
-        isCompleted: false,
-      );
+      _loadingDailyChallenge = true;
+    });
+    try {
+      final payload = await _dailyChallengeService.loadDailyChallenge();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        dailyChallenge = payload;
+        dailyChallengeTimeRemaining = payload.timeUntilReset;
+        _loadingDailyChallenge = false;
+      });
+    } catch (error) {
+      debugPrint('Error loading daily challenge: $error');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        dailyChallenge = null;
+        dailyChallengeTimeRemaining = null;
+        _loadingDailyChallenge = false;
+      });
+    }
+  }
+
+  void _updateTimeRemaining() {
+    if (!mounted) {
+      return;
+    }
+    final Duration? nextValue = dailyChallenge?.timeUntilReset;
+    if (dailyChallengeTimeRemaining == nextValue) {
+      return;
+    }
+    setState(() {
+      dailyChallengeTimeRemaining = nextValue;
     });
   }
 
@@ -137,6 +131,8 @@ class _MainMenuState extends State<MainMenu>
   void dispose() {
     _fadeController.dispose();
     _timer?.cancel();
+    _profileService.profileListenable.removeListener(_profileListener);
+    _dailyChallengeService.dispose();
     super.dispose();
   }
 
@@ -151,12 +147,13 @@ class _MainMenuState extends State<MainMenu>
 
   void _shareProgress(PlayerProfile profile) async {
     try {
-      final message = 
+      final message =
           'Just reached level ${profile.currentLevel} in SortBliss! 🎯\n'
-          'Total Score: ${profile.totalScore.toStringAsFixed(0)} points\n'
-          'Achievements Unlocked: ${profile.achievements.length}\n\n'
+          'Levels Completed: ${profile.levelsCompleted}\n'
+          'Achievements Unlocked: ${profile.unlockedAchievements.length}\n\n'
           'Can you beat my score? Download SortBliss now! 🚀';
       await Share.share(message, subject: 'Check out my SortBliss progress!');
+      unawaited(_profileService.incrementShareCount());
     } catch (e) {
       debugPrint('Error sharing progress: $e');
     }
@@ -237,28 +234,32 @@ class _MainMenuState extends State<MainMenu>
                           margin: EdgeInsets.only(bottom: 4.h),
                           child: LevelProgressWidget(
                             currentLevel: profile.currentLevel,
-                            progressPercentage: profile.progressPercentage,
-                            isLoading: false,
+                            progressPercentage: profile.levelProgress,
                           ),
                         ),
                         // Daily Challenge
-                        if (dailyChallenge != null)
+                        if (dailyChallenge != null || _loadingDailyChallenge)
                           Container(
                             margin: EdgeInsets.only(bottom: 4.h),
                             child: DailyChallengeWidget(
-                              initialChallenge: dailyChallenge!,
-                              service: DailyChallengeService(),
-                              args: const {},
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        DailyChallengeScreen(
-                                      challenge: dailyChallenge!,
-                                    ),
-                                  ),
-                                );
-                              },
+                              challenge: dailyChallenge,
+                              timeRemaining: dailyChallengeTimeRemaining,
+                              isLoading: _loadingDailyChallenge,
+                              onPressed:
+                                  dailyChallenge != null && !_loadingDailyChallenge
+                                      ? () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  DailyChallengeScreen(
+                                                service: _dailyChallengeService,
+                                                initialChallenge:
+                                                    dailyChallenge!,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      : null,
                             ),
                           ),
                         // Menu Actions
