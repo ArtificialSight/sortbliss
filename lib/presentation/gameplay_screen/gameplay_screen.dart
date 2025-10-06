@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class GameplayScreen extends StatefulWidget {
-  final Map<String, dynamic> levelData;
-  
-  const GameplayScreen({super.key, required this.levelData});
+  final Map<String, dynamic>? levelData;
+
+  const GameplayScreen({super.key, this.levelData});
 
   @override
   State<GameplayScreen> createState() => _GameplayScreenState();
@@ -133,6 +133,12 @@ class _GameplayScreenState extends State<GameplayScreen>
 
   @override
   Widget build(BuildContext context) {
+    final levelData = widget.levelData;
+
+    if (levelData == null || levelData.isEmpty) {
+      return _buildMissingLevelDataFallback(context);
+    }
+
     return Scaffold(
       body: AnimatedBuilder(
         animation: _backgroundAnimation,
@@ -153,12 +159,12 @@ class _GameplayScreenState extends State<GameplayScreen>
                 children: [
                   // Game header with score and moves
                   _buildGameHeader(),
-                  
+
                   // Main game area
                   Expanded(
                     child: _buildGameArea(),
                   ),
-                  
+
                   // Game controls
                   _buildGameControls(),
                 ],
@@ -167,6 +173,46 @@ class _GameplayScreenState extends State<GameplayScreen>
           );
         },
       ),
+    );
+  }
+
+  Widget _buildMissingLevelDataFallback(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orangeAccent,
+                size: 72,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'We couldn\'t load this level. Please return to the main menu and try again.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/main-menu',
+                    (route) => false,
+                  );
+                },
+                child: const Text('Return to Main Menu'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      backgroundColor: const Color(0xFF0F172A),
     );
   }
 
