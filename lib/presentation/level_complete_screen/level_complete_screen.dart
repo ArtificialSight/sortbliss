@@ -234,7 +234,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
                           SizedBox(height: 3.h),
                           StarRatingWidget(
                             starCount:
-                                _readInt('starsEarned', defaultValue: 3).clamp(0, 3).toInt(),
+                                _readInt('starsEarned', defaultValue: 3).clamp(0, 3),
                             onAnimationComplete: () => _showActionFeedback('Amazing performance!'),
                           ),
                           SizedBox(height: 4.h),
