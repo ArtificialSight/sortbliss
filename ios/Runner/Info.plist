@@ -39,11 +39,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>NSAppTransportSecurity</key>
+        <key>CADisableMinimumFrameDurationOnPhone</key>
+        <true/>
+        <key>UIApplicationSupportsIndirectInputEvents</key>
+        <true/>
+        <key>NSCameraUsageDescription</key>
+        <string>This app uses the camera to detect gestures that help you play the game.</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>The microphone is used for voice commands so you can control the game hands-free.</string>
+        <key>NSSystemVibrationsUsageDescription</key>
+        <string>Vibration feedback is used to confirm important in-game actions.</string>
+        <key>NSAppTransportSecurity</key>
     <dict>
         <key>NSAllowsArbitraryLoads</key>
         <true />
