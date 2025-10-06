@@ -225,7 +225,10 @@ class _MainMenuState extends State<MainMenu>
                           margin: EdgeInsets.only(bottom: 4.h),
                           child: PlayButtonWidget(
                             onPressed: () {
-                              Navigator.pushNamed(context, '/gameplay');
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.gameplay,
+                              );
                             },
                           ),
                         ),
