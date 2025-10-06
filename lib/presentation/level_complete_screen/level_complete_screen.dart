@@ -187,7 +187,7 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     final difficulty = _readString('difficulty', defaultValue: 'Standard');
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: AnimatedBuilder(
         animation: Listenable.merge([
           _backgroundController,
