@@ -5,6 +5,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../theme/app_theme.dart';
+import '../../core/services/viral_referral_service.dart';
+import '../../core/analytics/analytics_logger.dart';
 import 'widgets/action_buttons_widget.dart';
 import 'widgets/confetti_widget.dart';
 import 'widgets/progress_indicator_widget.dart';
@@ -377,16 +379,62 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     Navigator.of(context).maybePop({'action': 'replayLevel'});
   }
 
-  void _handleShareScore() {
+  Future<void> _handleShareScore() async {
     widget.onShareScore?.call();
 
     final level = _readInt('level', defaultValue: 1);
     final totalScore = _readInt('totalScore', defaultValue: 0);
     final stars = _readInt('starsEarned', defaultValue: 0);
-    final message =
-        'I just completed level $level in SortBliss with $stars ⭐ and a score of $totalScore!';
 
-    unawaited(Share.share(message));
+    // Initialize viral referral service
+    await ViralReferralService.instance.initialize();
+
+    // Track share event (awards coins for first share)
+    await ViralReferralService.instance.trackShare();
+
+    // Generate personalized share message with deep link
+    final message = ViralReferralService.instance.generateShareMessage(
+      level: level,
+      score: totalScore,
+      stars: stars,
+    );
+
+    // Track detailed analytics
+    AnalyticsLogger.logEvent('viral_share_initiated', parameters: {
+      'level': level,
+      'score': totalScore,
+      'stars': stars,
+      'referral_code': ViralReferralService.instance.myReferralCode,
+      'total_shares': ViralReferralService.instance.viralMetrics['total_shares'],
+    });
+
+    // Share via native dialog
+    final result = await Share.share(message);
+
+    // Track share completion
+    if (result.status == ShareResultStatus.success) {
+      AnalyticsLogger.logEvent('viral_share_completed', parameters: {
+        'level': level,
+        'method': result.raw ?? 'unknown',
+      });
+
+      // Show reward notification if first share
+      if (mounted && ViralReferralService.instance.viralMetrics['total_shares'] == 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.monetization_on, color: Colors.amber),
+                const SizedBox(width: 8),
+                Text('You earned ${ViralReferralService.coinsForFirstShare} coins for sharing!'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildMissingLevelDataFallback(BuildContext context) {

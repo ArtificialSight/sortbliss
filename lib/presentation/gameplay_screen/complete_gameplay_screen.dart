@@ -341,15 +341,22 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
       stars = 2; // Perfect but more moves
     }
 
+    // Break down score components for level complete screen
+    final basePoints = _score; // Score before bonuses
+    int speedBonus = 0;
+    int efficiencyBonus = 0;
+
     // Bonus for speed
     if (timeSeconds < 60 && isPerfect) {
-      _score += 500; // Speed bonus
+      speedBonus = 500;
+      _score += speedBonus;
     }
 
     // Bonus for efficiency
     final optimalMoves = _calculateOptimalMoves();
     if (_moveCount <= optimalMoves) {
-      _score += 300; // Efficiency bonus
+      efficiencyBonus = 300;
+      _score += efficiencyBonus;
     }
 
     // Calculate coins earned (10% of score)
@@ -395,16 +402,34 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
     }
 
     if (mounted) {
+      // Format completion time
+      final minutes = (timeSeconds / 60).floor();
+      final seconds = (timeSeconds % 60).round();
+      final completionTime = minutes > 0
+          ? '${minutes}m ${seconds}s ago'
+          : '${seconds}s ago';
+
       Navigator.of(context).pushReplacementNamed(
         '/level-complete',
         arguments: {
+          // Basic level info
           'level': widget.levelNumber,
-          'score': _score,
-          'moves': _moveCount,
-          'time': timeSeconds,
-          'stars': stars,
-          'coins': coinsEarned,
-          'perfect': isPerfect,
+          'levelTitle': 'Level ${widget.levelNumber} Complete!',
+          'completionTime': completionTime,
+          'difficulty': stars == 3 ? 'Expert Performance' : (stars == 2 ? 'Great Job' : 'Level Complete'),
+
+          // Performance metrics
+          'starsEarned': stars,
+          'basePoints': basePoints,
+          'timeBonus': speedBonus,
+          'moveEfficiency': efficiencyBonus,
+          'totalScore': _score,
+          'bestMoves': _moveCount,
+          'coinsEarned': coinsEarned,
+
+          // Progression
+          'progressToNext': 0.0, // Updated after profile service
+          'nextMilestone': 'Level ${widget.levelNumber + 1}',
         },
       );
     }
