@@ -137,6 +137,23 @@ class MonetizationManager extends ChangeNotifier {
         parameters: {'delta': amount, 'balance': coinBalance.value});
   }
 
+  /// Spend coins if user has sufficient balance
+  /// Returns true if coins were successfully spent, false otherwise
+  bool spendCoins(int amount) {
+    if (amount <= 0) return false;
+    if (coinBalance.value < amount) {
+      AnalyticsLogger.logEvent('coin_spend_insufficient',
+          parameters: {'requested': amount, 'balance': coinBalance.value});
+      return false;
+    }
+
+    coinBalance.value -= amount;
+    _preferences.setInt('coin_balance', coinBalance.value);
+    AnalyticsLogger.logEvent('coins_spent',
+        parameters: {'amount': amount, 'balance': coinBalance.value});
+    return true;
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();

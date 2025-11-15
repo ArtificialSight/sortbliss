@@ -8,6 +8,9 @@ import 'package:sortbliss/core/analytics/gameplay_analytics_service.dart';
 import 'package:sortbliss/core/analytics/analytics_logger.dart';
 import 'package:sortbliss/core/services/audio_manager.dart';
 import 'package:sortbliss/core/services/haptic_manager.dart';
+import 'package:sortbliss/core/monetization/ad_manager.dart';
+import 'package:sortbliss/core/monetization/monetization_manager.dart';
+import 'package:sortbliss/core/ai/smart_hint_system.dart';
 
 /// Complete gameplay implementation with drag-and-drop sorting mechanics
 /// This is the CRITICAL PATH feature that unlocks all market validation
@@ -39,6 +42,10 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
   DateTime? _lastCorrectDropTime;
   bool _isLevelComplete = false;
 
+  // Hint system
+  int _incorrectAttempts = 0;
+  bool _showHintButton = false;
+
   // Drag state
   GameItem? _draggedItem;
   String? _highlightedContainer;
@@ -57,6 +64,11 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
     _initializeAnimations();
     _initializeLevel();
     _trackLevelStart();
+    _initializeAds();
+  }
+
+  Future<void> _initializeAds() async {
+    await AdManager.instance.initialize();
   }
 
   @override
@@ -267,6 +279,16 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
   }
 
   void _handleIncorrectPlacement(GameItem item) {
+    // Track incorrect attempts
+    _incorrectAttempts++;
+
+    // Show hint button after 3 incorrect attempts
+    if (_incorrectAttempts >= 3 && !_showHintButton) {
+      setState(() {
+        _showHintButton = true;
+      });
+    }
+
     // Feedback
     HapticManager.errorPattern();
     AudioManager.playSoundEffect('error');
@@ -360,6 +382,18 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
     // Show completion screen
     await Future.delayed(const Duration(milliseconds: 500));
 
+    // Show interstitial ad every 3 levels (3, 6, 9, 12, etc.)
+    // This validates ad monetization and measures eCPM
+    if (widget.levelNumber % 3 == 0) {
+      await AdManager.instance.showInterstitialIfEligible();
+
+      // Track ad opportunity for analytics
+      AnalyticsLogger.logEvent('ad_opportunity_interstitial', parameters: {
+        'level': widget.levelNumber,
+        'frequency': 'every_3_levels',
+      });
+    }
+
     if (mounted) {
       Navigator.of(context).pushReplacementNamed(
         '/level-complete',
@@ -419,6 +453,167 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
     return _containers.values.fold(0, (sum, items) => sum + items.length);
   }
 
+  /// Show hint acquisition dialog: watch ad or spend coins
+  Future<void> _showHintDialog() async {
+    final hasCoins = MonetizationManager.instance.coinBalance.value >= 50;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Need a Hint?'),
+        content: const Text('Get a smart hint to help you solve this puzzle!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          if (hasCoins)
+            FilledButton.tonal(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _getHintWithCoins();
+              },
+              child: const Text('Use 50 Coins'),
+            ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _getHintWithAd();
+            },
+            child: const Text('Watch Ad'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Get hint by watching rewarded ad
+  Future<void> _getHintWithAd() async {
+    await AdManager.instance.showRewardedAd(
+      onRewardEarned: () {
+        _generateAndShowHint();
+      },
+      onAdUnavailable: () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ad not available. Try using coins instead!'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  /// Get hint by spending coins
+  void _getHintWithCoins() {
+    final success = MonetizationManager.instance.spendCoins(50);
+
+    if (success) {
+      _generateAndShowHint();
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Insufficient coins! Watch an ad instead.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Generate and display hint using SmartHintSystem
+  Future<void> _generateAndShowHint() async {
+    // Build puzzle state from current game state
+    final puzzleItems = _unsortedItems.map((item) => PuzzleItem(
+      id: item.id,
+      displayName: item.name,
+      category: item.mainCategory,
+    )).toList();
+
+    final puzzleState = PuzzleState(
+      unsortedItems: puzzleItems,
+      availableContainers: _containerOrder,
+      moveCount: _moveCount,
+      correctPlacements: _calculateCorrectPlacements(),
+    );
+
+    // Determine hint level based on struggle
+    final timeSpent = DateTime.now().difference(_levelStartTime!).inSeconds;
+    final hintLevel = SmartHintSystem.instance.getRecommendedHintLevel(
+      attemptCount: _incorrectAttempts,
+      timeSpentSeconds: timeSpent,
+      difficultyLevel: 1.0,
+    );
+
+    try {
+      // Generate hint
+      final hint = await SmartHintSystem.instance.generateHint(
+        levelId: 'level_${widget.levelNumber}',
+        puzzleState: puzzleState,
+        hintLevel: hintLevel,
+        useAI: true,
+      );
+
+      // Track hint usage
+      AnalyticsLogger.logEvent('hint_displayed', parameters: {
+        'level': widget.levelNumber,
+        'hint_level': hintLevel.name,
+        'incorrect_attempts': _incorrectAttempts,
+        'ai_generated': hint.isAIGenerated,
+      });
+
+      // Show hint in dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.lightbulb, color: Colors.amber),
+                const SizedBox(width: 8),
+                Text(hint.levelDescription),
+              ],
+            ),
+            content: Text(
+              hint.text,
+              style: const TextStyle(fontSize: 16),
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Got it!'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate hint: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  int _calculateCorrectPlacements() {
+    int correct = 0;
+    _containers.forEach((category, items) {
+      for (final item in items) {
+        if (item.mainCategory == category) {
+          correct++;
+        }
+      }
+    });
+    return correct;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -445,6 +640,21 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
           ),
         ),
       ),
+      // Show hint button after user struggles (3+ incorrect attempts)
+      floatingActionButton: _showHintButton && !_isLevelComplete
+          ? FloatingActionButton.extended(
+              onPressed: _showHintDialog,
+              backgroundColor: Colors.amber,
+              icon: const Icon(Icons.lightbulb, color: Colors.black),
+              label: const Text(
+                'Need Help?',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : null,
     );
   }
 
