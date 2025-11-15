@@ -7,6 +7,7 @@ import '../presentation/main_menu/main_menu.dart';
 import '../presentation/settings/settings_screen.dart';
 import '../presentation/splash_screen/splash_screen.dart';
 import '../presentation/storefront/storefront_screen.dart';
+import '../presentation/investor_dashboard/investor_kpi_dashboard.dart';
 
 class AppRoutes {
   // TODO: Add your routes here
@@ -19,6 +20,7 @@ class AppRoutes {
   static const String achievements = '/achievements';
   static const String settings = '/settings';
   static const String storefront = '/storefront';
+  static const String investorDashboard = '/investor-dashboard';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
@@ -61,6 +63,7 @@ class AppRoutes {
     },
     settings: (context) => const SettingsScreen(),
     storefront: (context) => const StorefrontScreen(),
+    investorDashboard: (context) => const InvestorKPIDashboard(),
     dailyChallenge: (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is DailyChallengeScreenArgs) {

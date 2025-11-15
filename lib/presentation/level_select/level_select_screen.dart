@@ -13,6 +13,16 @@ class LevelSelectScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Select Level'),
         backgroundColor: const Color(0xFF0F172A),
+        actions: [
+          // Investor Dashboard Access (hidden in plain sight)
+          IconButton(
+            icon: const Icon(Icons.analytics, size: 20),
+            tooltip: 'Investor Dashboard',
+            onPressed: () {
+              Navigator.of(context).pushNamed('/investor-dashboard');
+            },
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
