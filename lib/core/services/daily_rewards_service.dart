@@ -48,6 +48,26 @@ class DailyRewardsService {
     return today.isAfter(lastClaim);
   }
 
+  /// Alias for isRewardAvailable (used by daily rewards screen)
+  bool canClaimToday() {
+    if (!_initialized) return false;
+
+    final lastClaimDate = _getLastClaimDate();
+    if (lastClaimDate == null) return true;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastClaim = DateTime(lastClaimDate.year, lastClaimDate.month, lastClaimDate.day);
+
+    return today.isAfter(lastClaim);
+  }
+
+  /// Get next reward amount
+  int getNextRewardAmount() {
+    final reward = getNextReward();
+    return reward?.coins ?? 0;
+  }
+
   /// Get current login streak
   int getCurrentStreak() {
     if (!_initialized) return 0;
@@ -115,6 +135,12 @@ class DailyRewardsService {
     });
 
     return reward;
+  }
+
+  /// Claim daily reward and return coins amount (used by daily rewards screen)
+  Future<int> claimDailyReward() async {
+    final reward = await claimReward();
+    return reward?.coins ?? 0;
   }
 
   /// Get all rewards in the cycle
