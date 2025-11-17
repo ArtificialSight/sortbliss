@@ -11,6 +11,7 @@ import '../../presentation/screens/settings_screen.dart';
 import '../../presentation/screens/daily_rewards_screen.dart';
 import '../../presentation/screens/onboarding_screen.dart';
 import '../../presentation/screens/level_select_screen.dart';
+import '../../presentation/screens/referral_screen.dart';
 import '../screens/debug_menu_screen.dart';
 
 /// Centralized route configuration for the entire app
@@ -35,6 +36,7 @@ class AppRoutes {
   static const String powerups = '/powerups';
   static const String settings = '/settings';
   static const String dailyRewards = '/daily-rewards';
+  static const String referral = '/referral';
   static const String game = '/game';
   static const String levelSelect = '/level-select';
   static const String debug = '/debug';
@@ -105,6 +107,12 @@ class AppRoutes {
       case dailyRewards:
         return _buildRoute(
           const DailyRewardsScreen(),
+          settings: settings,
+        );
+
+      case referral:
+        return _buildRoute(
+          const ReferralScreen(),
           settings: settings,
         );
 

@@ -16,6 +16,8 @@ class AppConstants {
   static const String supportEmail = 'support@sortbliss.com';
   static const String feedbackEmail = 'feedback@sortbliss.com';
   static const String websiteUrl = 'https://sortbliss.com';
+  static const String appStoreUrl = 'https://sortbliss.com/download'; // Redirects to App/Play Store
+  static const String appDeepLinkUrl = 'sortbliss://app'; // For referral links
 
   // Deep Links
   static const String deepLinkScheme = 'sortbliss';
@@ -95,6 +97,8 @@ class AppConstants {
   static const String eventRatingCompleted = 'rating_completed';
   static const String eventShareCompleted = 'share_completed';
   static const String eventReferralUsed = 'referral_used';
+  static const String eventReferralShared = 'referral_shared';
+  static const String eventReferralCompleted = 'referral_completed';
 
   // Notification Channels
   static const String notificationChannelIdDefault = 'default';
