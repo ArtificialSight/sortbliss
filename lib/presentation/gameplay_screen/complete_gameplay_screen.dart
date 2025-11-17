@@ -11,6 +11,7 @@ import 'package:sortbliss/core/services/haptic_manager.dart';
 import 'package:sortbliss/core/monetization/ad_manager.dart';
 import 'package:sortbliss/core/monetization/monetization_manager.dart';
 import 'package:sortbliss/core/ai/smart_hint_system.dart';
+import 'package:sortbliss/core/services/power_ups_service.dart';
 
 /// Complete gameplay implementation with drag-and-drop sorting mechanics
 /// This is the CRITICAL PATH feature that unlocks all market validation
@@ -65,10 +66,15 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
     _initializeLevel();
     _trackLevelStart();
     _initializeAds();
+    _initializePowerUps();
   }
 
   Future<void> _initializeAds() async {
     await AdManager.instance.initialize();
+  }
+
+  Future<void> _initializePowerUps() async {
+    await PowerUpsService.instance.initialize();
   }
 
   @override
@@ -251,7 +257,14 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
       final timeSinceLastDrop = now.difference(_lastCorrectDropTime!);
       if (timeSinceLastDrop.inSeconds <= 3) {
         _comboStreak++;
-        points += (_comboStreak * 25); // 25 bonus per combo level
+        int comboBonus = _comboStreak * 25; // 25 bonus per combo level
+
+        // Apply Combo Multiplier power-up (2x combo points)
+        if (PowerUpsService.instance.isActive(PowerUpType.comboMultiplier)) {
+          comboBonus *= 2;
+        }
+
+        points += comboBonus;
       } else {
         _comboStreak = 0;
       }
@@ -279,6 +292,24 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
   }
 
   void _handleIncorrectPlacement(GameItem item) {
+    // Check if Accuracy Booster is active (forgives first mistake)
+    if (PowerUpsService.instance.isActive(PowerUpType.accuracyBooster)) {
+      // Convert error into success (one-time forgiveness)
+      HapticManager.successPattern();
+      AudioManager.playSoundEffect('success');
+
+      // Show feedback that error was forgiven
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🎯 Accuracy Booster: Mistake forgiven!'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.blue,
+        ),
+      );
+
+      return; // Don't count as error
+    }
+
     // Track incorrect attempts
     _incorrectAttempts++;
 
@@ -323,6 +354,105 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
     }
   }
 
+  Future<void> _checkAchievements({
+    required double timeSeconds,
+    required bool isPerfect,
+  }) async {
+    final profile = PlayerProfileService.instance.currentProfile;
+
+    // Speed Demon: Finish a level in under 30 seconds
+    if (timeSeconds < 30 && !profile.unlockedAchievements.contains('Speed Demon')) {
+      await PlayerProfileService.instance.unlockAchievement('Speed Demon');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.emoji_events, color: Colors.amber),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Achievement Unlocked!',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '🏆 Speed Demon - Finished in ${timeSeconds.toStringAsFixed(1)}s',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.purple,
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      AnalyticsLogger.logEvent('achievement_unlocked', parameters: {
+        'achievement': 'Speed Demon',
+        'time_seconds': timeSeconds,
+      });
+    }
+
+    // Perfectionist: Achieve a flawless run with no mistakes
+    if (isPerfect &&
+        _incorrectAttempts == 0 &&
+        !profile.unlockedAchievements.contains('Perfectionist')) {
+      await PlayerProfileService.instance.unlockAchievement('Perfectionist');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.emoji_events, color: Colors.amber),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Achievement Unlocked!',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '🎯 Perfectionist - Flawless completion with no mistakes!',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      AnalyticsLogger.logEvent('achievement_unlocked', parameters: {
+        'achievement': 'Perfectionist',
+        'incorrect_attempts': _incorrectAttempts,
+      });
+    }
+  }
+
   Future<void> _completeLevel({required bool isPerfect}) async {
     if (_isLevelComplete) return;
 
@@ -352,6 +482,20 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
       _score += speedBonus;
     }
 
+    // Apply Speed Boost power-up (+500 bonus if under 45 seconds)
+    if (PowerUpsService.instance.isActive(PowerUpType.speedBoost) && timeSeconds < 45) {
+      speedBonus += 500;
+      _score += 500;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚡ Speed Boost: +500 bonus points!'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.purple,
+        ),
+      );
+    }
+
     // Bonus for efficiency
     final optimalMoves = _calculateOptimalMoves();
     if (_moveCount <= optimalMoves) {
@@ -360,7 +504,21 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
     }
 
     // Calculate coins earned (10% of score)
-    final coinsEarned = (_score / 10).round();
+    int coinsEarned = (_score / 10).round();
+
+    // Apply Coin Magnet power-up (+50% coins)
+    if (PowerUpsService.instance.isActive(PowerUpType.coinMagnet)) {
+      final bonusCoins = (coinsEarned * 0.5).round();
+      coinsEarned += bonusCoins;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🧲 Coin Magnet: +$bonusCoins bonus coins!'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.amber,
+        ),
+      );
+    }
 
     // Track analytics
     await GameplayAnalyticsService.instance.trackLevelComplete(
@@ -381,6 +539,9 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
       currentLevel: widget.levelNumber + 1,
       levelProgress: 0.0,
     );
+
+    // Check and unlock achievements
+    await _checkAchievements(timeSeconds: timeSeconds, isPerfect: isPerfect);
 
     // Celebrate!
     HapticManager.celebrationPattern();
@@ -657,6 +818,7 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
           child: Column(
             children: [
               _buildHeader(),
+              _buildActivePowerUpsIndicator(),
               Expanded(
                 child: _buildGameArea(),
               ),
@@ -745,6 +907,88 @@ class _CompleteGameplayScreenState extends State<CompleteGameplayScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActivePowerUpsIndicator() {
+    return AnimatedBuilder(
+      animation: PowerUpsService.instance,
+      builder: (context, child) {
+        final activePowerUps = PowerUpsService.instance.activePowerUps;
+
+        if (activePowerUps.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.purple.withOpacity(0.3),
+                Colors.blue.withOpacity(0.3),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.purple.withOpacity(0.5),
+              width: 2,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.flash_on, color: Colors.amber, size: 16),
+                  SizedBox(width: 4),
+                  Text(
+                    'Active Power-Ups:',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: activePowerUps.map((type) {
+                  final definition = PowerUpsService.catalog[type]!;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          definition.icon,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          definition.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

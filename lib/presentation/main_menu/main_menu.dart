@@ -307,6 +307,16 @@ class _MainMenuState extends State<MainMenu>
                               ),
                               SizedBox(height: 3.h),
                               MenuActionButtonWidget(
+                                iconName: 'flash',
+                                title: 'Power-Ups',
+                                subtitle: 'Buy boosts and consumables',
+                                onPressed: () {
+                                  Navigator.of(context).pushNamed(AppRoutes.powerUps);
+                                },
+                                iconColor: Colors.purple,
+                              ),
+                              SizedBox(height: 3.h),
+                              MenuActionButtonWidget(
                                 iconName: 'shop',
                                 title: 'Shop',
                                 subtitle: 'Unlock premium features & themes',
