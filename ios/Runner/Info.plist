@@ -49,10 +49,5 @@
         <string>The microphone is used for voice commands so you can control the game hands-free.</string>
         <key>NSSystemVibrationsUsageDescription</key>
         <string>Vibration feedback is used to confirm important in-game actions.</string>
-        <key>NSAppTransportSecurity</key>
-    <dict>
-        <key>NSAllowsArbitraryLoads</key>
-        <true />
-    </dict>
 </dict>
 </plist>

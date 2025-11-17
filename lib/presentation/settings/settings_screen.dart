@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/services/player_profile_service.dart';
 import '../../core/services/user_settings_service.dart';
@@ -137,6 +138,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     SizedBox(height: 3.h),
                     _SettingsSection(
+                      title: 'Legal & Privacy',
+                      children: [
+                        _SettingsTile(
+                          icon: Icons.privacy_tip,
+                          title: 'Privacy Policy',
+                          subtitle: 'Learn how we protect your data',
+                          trailing: IconButton(
+                            icon: const Icon(Icons.open_in_new),
+                            onPressed: _openPrivacyPolicy,
+                          ),
+                        ),
+                        _SettingsTile(
+                          icon: Icons.description,
+                          title: 'Terms of Service',
+                          subtitle: 'Read our terms and conditions',
+                          trailing: IconButton(
+                            icon: const Icon(Icons.open_in_new),
+                            onPressed: _openTermsOfService,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 3.h),
+                    _SettingsSection(
                       title: 'Danger zone',
                       children: [
                         _SettingsTile(
@@ -165,6 +190,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (value <= 0.5) return 'Balanced';
     if (value <= 0.75) return 'Challenging';
     return 'Brain Burner';
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final url = Uri.parse('https://raw.githubusercontent.com/ArtificialSight/sortbliss/main/PRIVACY_POLICY.md');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open Privacy Policy')),
+      );
+    }
+  }
+
+  Future<void> _openTermsOfService() async {
+    final url = Uri.parse('https://raw.githubusercontent.com/ArtificialSight/sortbliss/main/TERMS_OF_SERVICE.md');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open Terms of Service')),
+      );
+    }
   }
 
   Future<void> _confirmReset() async {
