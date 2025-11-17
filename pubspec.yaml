@@ -41,6 +41,10 @@ dependencies:
   url_launcher: ^6.3.1           # Opening external URLs for privacy policy and terms of service
   # TODO: Uncomment after Firebase setup (P0.5)
   # cloud_functions: ^4.5.0      # Firebase Cloud Functions for IAP receipt validation
+  # firebase_core: ^2.24.0       # Firebase core SDK - required for all Firebase services
+  # firebase_crashlytics: ^3.4.8 # Crash reporting and analytics
+  # firebase_analytics: ^10.7.4  # User behavior analytics and funnels
+  # firebase_performance: ^0.9.3+8 # Performance monitoring and traces
 dev_dependencies:
   flutter_test:    # CRITICAL: Required for Flutter project testing - DO NOT REMOVE
     sdk: flutter   # CRITICAL: Required for Flutter project testing - DO NOT REMOVE

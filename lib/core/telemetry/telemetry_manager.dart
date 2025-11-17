@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../analytics/analytics_logger.dart';
+// TODO: Uncomment after Firebase setup (P0.5)
+// import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+// import 'package:firebase_performance/firebase_performance.dart';
 
 /// Telemetry manager for performance monitoring, crash reporting,
 /// and business metrics validation.
@@ -30,11 +33,13 @@ class TelemetryManager {
       'debug_mode': kDebugMode,
     });
 
-    // TODO: Initialize Firebase Crashlytics when added
+    // TODO: Uncomment after Firebase setup (P0.5) - Step 1 of 2
+    // Enable Crashlytics collection (disabled in debug mode to avoid test crashes)
     // await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
 
-    // TODO: Initialize Firebase Performance when added
-    // FirebasePerformance.instance;
+    // TODO: Uncomment after Firebase setup (P0.5) - Step 2 of 2
+    // Initialize Firebase Performance Monitoring
+    // final _ = FirebasePerformance.instance; // Activates performance monitoring
   }
 
   // ============ CRASH REPORTING ============
@@ -58,19 +63,14 @@ class TelemetryManager {
       if (stackTrace != null) print('   Stack: $stackTrace');
     }
 
-    // TODO: Send to Firebase Crashlytics
-    // FirebaseCrashlytics.instance.recordError(
+    // TODO: Uncomment after Firebase setup (P0.5)
+    // Send error to Firebase Crashlytics for tracking and analysis
+    // await FirebaseCrashlytics.instance.recordError(
     //   exception,
     //   stackTrace,
     //   reason: reason,
     //   information: context?.entries.map((e) => '${e.key}: ${e.value}').toList() ?? [],
-    // );
-
-    // TODO: Send to Sentry (alternative)
-    // Sentry.captureException(
-    //   exception,
-    //   stackTrace: stackTrace,
-    //   hint: reason,
+    //   fatal: false, // Mark as non-fatal error
     // );
   }
 
@@ -80,7 +80,8 @@ class TelemetryManager {
       'user_id_hash': userId.hashCode.toString(), // Never log actual user ID
     });
 
-    // TODO: Set user ID in Crashlytics
+    // TODO: Uncomment after Firebase setup (P0.5)
+    // Set user ID in Crashlytics for crash attribution
     // FirebaseCrashlytics.instance.setUserIdentifier(userId);
   }
 
@@ -88,7 +89,8 @@ class TelemetryManager {
   void setCustomKey(String key, dynamic value) {
     _sessionMetrics[key] = value;
 
-    // TODO: Set in Crashlytics
+    // TODO: Uncomment after Firebase setup (P0.5)
+    // Set custom key in Crashlytics for crash debugging context
     // FirebaseCrashlytics.instance.setCustomKey(key, value);
   }
 
@@ -246,12 +248,13 @@ class PerformanceTrace {
       }
     }
 
-    // TODO: Send to Firebase Performance
-    // final trace = FirebasePerformance.instance.newTrace(name);
-    // await trace.start();
+    // TODO: Uncomment after Firebase setup (P0.5)
+    // Send performance trace to Firebase Performance Monitoring
+    // final firebaseTrace = FirebasePerformance.instance.newTrace(name);
+    // await firebaseTrace.start();
     // _metrics.forEach((key, value) {
-    //   trace.setMetric(key, value);
+    //   firebaseTrace.setMetric(key, value.toInt());
     // });
-    // await trace.stop();
+    // await firebaseTrace.stop();
   }
 }
