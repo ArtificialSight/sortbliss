@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sizer/sizer.dart';
 
+import '../../core/services/rate_app_service.dart';
 import '../../theme/app_theme.dart';
 import 'widgets/action_buttons_widget.dart';
 import 'widgets/confetti_widget.dart';
@@ -45,6 +46,10 @@ class _LevelCompleteScreenState extends State<LevelCompleteScreen>
     super.initState();
     _initializeAnimations();
     _startConfettiTimer();
+
+    // Track level completion for app rating prompt
+    // Shows rating dialog after 5 levels completed (with smart timing)
+    RateAppService.instance.onLevelCompleted();
   }
 
   void _initializeAnimations() {

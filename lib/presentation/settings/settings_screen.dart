@@ -3,6 +3,7 @@ import 'package:sizer/sizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/services/player_profile_service.dart';
+import '../../core/services/rate_app_service.dart';
 import '../../core/services/user_settings_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -162,6 +163,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     SizedBox(height: 3.h),
                     _SettingsSection(
+                      title: 'Support & Feedback',
+                      children: [
+                        _SettingsTile(
+                          icon: Icons.star_rate,
+                          title: 'Rate SortBliss',
+                          subtitle: 'Help us grow by rating the app',
+                          trailing: TextButton(
+                            onPressed: _rateApp,
+                            child: const Text('Rate'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 3.h),
+                    _SettingsSection(
                       title: 'Danger zone',
                       children: [
                         _SettingsTile(
@@ -214,6 +230,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SnackBar(content: Text('Could not open Terms of Service')),
       );
     }
+  }
+
+  Future<void> _rateApp() async {
+    await RateAppService.instance.requestReview();
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Thank you for your feedback!')),
+    );
   }
 
   Future<void> _confirmReset() async {
