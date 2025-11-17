@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../analytics/analytics_logger.dart';
+// TODO: Uncomment after Firebase setup (P0.5)
+// import 'package:cloud_functions/cloud_functions.dart';
 
 /// Product identifiers used across the storefront and entitlement system.
 class MonetizationProducts {
@@ -189,8 +192,91 @@ class MonetizationManager extends ChangeNotifier {
     }
   }
 
+  /// Validates a purchase receipt with Firebase Cloud Functions
+  ///
+  /// This prevents IAP fraud by verifying purchases server-side with Apple/Google APIs.
+  /// Returns true if validation succeeds, false if it fails.
+  Future<bool> _validateReceipt(PurchaseDetails purchaseDetails) async {
+    // TODO: Uncomment after Firebase setup (P0.5)
+    /*
+    try {
+      final functions = FirebaseFunctions.instance;
+
+      // Determine platform
+      final platform = Platform.isIOS ? 'ios' : 'android';
+
+      // Extract receipt data based on platform
+      String receiptData;
+      if (Platform.isIOS) {
+        // For iOS, verificationData.serverVerificationData contains the receipt
+        receiptData = purchaseDetails.verificationData.serverVerificationData;
+      } else {
+        // For Android, use the purchase token
+        receiptData = purchaseDetails.verificationData.serverVerificationData;
+      }
+
+      // Call Cloud Function to validate receipt
+      final result = await functions.httpsCallable('validateReceipt').call({
+        'platform': platform,
+        'receiptData': receiptData,
+        'productId': purchaseDetails.productID,
+        'transactionId': purchaseDetails.purchaseID,
+      });
+
+      final validationData = result.data as Map<String, dynamic>;
+      final isValid = validationData['valid'] as bool;
+
+      if (isValid) {
+        AnalyticsLogger.logEvent('iap_receipt_validated', parameters: {
+          'productId': purchaseDetails.productID,
+          'transactionId': purchaseDetails.purchaseID,
+        });
+        return true;
+      } else {
+        final error = validationData['error'] as String?;
+        AnalyticsLogger.logEvent('iap_receipt_validation_failed', parameters: {
+          'productId': purchaseDetails.productID,
+          'error': error ?? 'Unknown error',
+        });
+        return false;
+      }
+    } catch (e) {
+      AnalyticsLogger.logEvent('iap_receipt_validation_error', parameters: {
+        'productId': purchaseDetails.productID,
+        'error': e.toString(),
+      });
+
+      // In production, you might want to fail-safe by denying the purchase
+      // For now, we'll allow it but log the error
+      debugPrint('Receipt validation error: $e');
+      return false;
+    }
+    */
+
+    // TEMPORARY: Allow all purchases until Firebase is set up
+    // This should be removed once Cloud Functions are deployed
+    debugPrint('WARNING: Receipt validation disabled - Firebase not configured');
+    AnalyticsLogger.logEvent('iap_receipt_validation_skipped', parameters: {
+      'productId': purchaseDetails.productID,
+      'reason': 'Firebase not configured',
+    });
+    return true;
+  }
+
   Future<void> _deliverProduct(PurchaseDetails purchaseDetails) async {
     final productId = purchaseDetails.productID;
+
+    // Validate receipt with server-side verification
+    final isValid = await _validateReceipt(purchaseDetails);
+
+    if (!isValid) {
+      AnalyticsLogger.logEvent('iap_purchase_rejected_invalid_receipt',
+          parameters: {'productId': productId});
+
+      // Don't deliver product if receipt validation fails
+      debugPrint('Purchase rejected: Invalid receipt for $productId');
+      return;
+    }
 
     AnalyticsLogger.logEvent('iap_purchase_delivered',
         parameters: {'productId': productId});

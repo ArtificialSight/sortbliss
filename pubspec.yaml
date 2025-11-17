@@ -39,6 +39,8 @@ dependencies:
   google_mobile_ads: ^5.2.0
   in_app_review: ^2.0.8
   url_launcher: ^6.3.1           # Opening external URLs for privacy policy and terms of service
+  # TODO: Uncomment after Firebase setup (P0.5)
+  # cloud_functions: ^4.5.0      # Firebase Cloud Functions for IAP receipt validation
 dev_dependencies:
   flutter_test:    # CRITICAL: Required for Flutter project testing - DO NOT REMOVE
     sdk: flutter   # CRITICAL: Required for Flutter project testing - DO NOT REMOVE
