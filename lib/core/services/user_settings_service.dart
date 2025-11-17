@@ -104,6 +104,36 @@ class UserSettingsService {
     );
   }
 
+  Future<void> setTextScale(double value) async {
+    await updateSettings(
+      _settingsNotifier.value.copyWith(textScale: value),
+    );
+  }
+
+  Future<void> setReduceMotion(bool value) async {
+    await updateSettings(
+      _settingsNotifier.value.copyWith(reduceMotion: value),
+    );
+  }
+
+  Future<void> setHighContrastMode(bool value) async {
+    await updateSettings(
+      _settingsNotifier.value.copyWith(highContrastMode: value),
+    );
+  }
+
+  Future<void> setParticleEffectsEnabled(bool value) async {
+    await updateSettings(
+      _settingsNotifier.value.copyWith(particleEffectsEnabled: value),
+    );
+  }
+
+  Future<void> setPerformanceMode(bool value) async {
+    await updateSettings(
+      _settingsNotifier.value.copyWith(performanceMode: value),
+    );
+  }
+
   Future<void> resetToDefaults() async {
     await updateSettings(UserSettings.defaults);
   }
@@ -118,6 +148,11 @@ class UserSettings {
     required this.notificationsEnabled,
     required this.voiceCommandsEnabled,
     required this.difficulty,
+    required this.textScale,
+    required this.reduceMotion,
+    required this.highContrastMode,
+    required this.particleEffectsEnabled,
+    required this.performanceMode,
   });
 
   final bool soundEffectsEnabled;
@@ -126,6 +161,11 @@ class UserSettings {
   final bool notificationsEnabled;
   final bool voiceCommandsEnabled;
   final double difficulty;
+  final double textScale;
+  final bool reduceMotion;
+  final bool highContrastMode;
+  final bool particleEffectsEnabled;
+  final bool performanceMode;
 
   static const UserSettings defaults = UserSettings(
     soundEffectsEnabled: true,
@@ -134,6 +174,11 @@ class UserSettings {
     notificationsEnabled: true,
     voiceCommandsEnabled: false,
     difficulty: 0.5,
+    textScale: 1.0,
+    reduceMotion: false,
+    highContrastMode: false,
+    particleEffectsEnabled: true,
+    performanceMode: false,
   );
 
   UserSettings copyWith({
@@ -143,6 +188,11 @@ class UserSettings {
     bool? notificationsEnabled,
     bool? voiceCommandsEnabled,
     double? difficulty,
+    double? textScale,
+    bool? reduceMotion,
+    bool? highContrastMode,
+    bool? particleEffectsEnabled,
+    bool? performanceMode,
   }) {
     return UserSettings(
       soundEffectsEnabled: soundEffectsEnabled ?? this.soundEffectsEnabled,
@@ -153,6 +203,11 @@ class UserSettings {
       voiceCommandsEnabled:
           voiceCommandsEnabled ?? this.voiceCommandsEnabled,
       difficulty: difficulty ?? this.difficulty,
+      textScale: textScale ?? this.textScale,
+      reduceMotion: reduceMotion ?? this.reduceMotion,
+      highContrastMode: highContrastMode ?? this.highContrastMode,
+      particleEffectsEnabled: particleEffectsEnabled ?? this.particleEffectsEnabled,
+      performanceMode: performanceMode ?? this.performanceMode,
     );
   }
 
@@ -164,17 +219,27 @@ class UserSettings {
       'notificationsEnabled': notificationsEnabled,
       'voiceCommandsEnabled': voiceCommandsEnabled,
       'difficulty': difficulty,
+      'textScale': textScale,
+      'reduceMotion': reduceMotion,
+      'highContrastMode': highContrastMode,
+      'particleEffectsEnabled': particleEffectsEnabled,
+      'performanceMode': performanceMode,
     };
   }
 
   factory UserSettings.fromJson(Map<String, dynamic> json) {
     return UserSettings(
-      soundEffectsEnabled: json['soundEffectsEnabled'] as bool? ?? true,
-      musicEnabled: json['musicEnabled'] as bool? ?? true,
-      hapticsEnabled: json['hapticsEnabled'] as bool? ?? true,
-      notificationsEnabled: json['notificationsEnabled'] as bool? ?? true,
-      voiceCommandsEnabled: json['voiceCommandsEnabled'] as bool? ?? false,
-      difficulty: (json['difficulty'] as num?)?.toDouble() ?? 0.5,
+      soundEffectsEnabled: json['soundEffectsEnabled'] as bool? ?? defaults.soundEffectsEnabled,
+      musicEnabled: json['musicEnabled'] as bool? ?? defaults.musicEnabled,
+      hapticsEnabled: json['hapticsEnabled'] as bool? ?? defaults.hapticsEnabled,
+      notificationsEnabled: json['notificationsEnabled'] as bool? ?? defaults.notificationsEnabled,
+      voiceCommandsEnabled: json['voiceCommandsEnabled'] as bool? ?? defaults.voiceCommandsEnabled,
+      difficulty: (json['difficulty'] as num?)?.toDouble() ?? defaults.difficulty,
+      textScale: (json['textScale'] as num?)?.toDouble() ?? defaults.textScale,
+      reduceMotion: json['reduceMotion'] as bool? ?? defaults.reduceMotion,
+      highContrastMode: json['highContrastMode'] as bool? ?? defaults.highContrastMode,
+      particleEffectsEnabled: json['particleEffectsEnabled'] as bool? ?? defaults.particleEffectsEnabled,
+      performanceMode: json['performanceMode'] as bool? ?? defaults.performanceMode,
     );
   }
 }
