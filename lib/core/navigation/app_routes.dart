@@ -10,6 +10,8 @@ import '../../presentation/screens/powerups_screen.dart';
 import '../../presentation/screens/settings_screen.dart';
 import '../../presentation/screens/daily_rewards_screen.dart';
 import '../../presentation/screens/onboarding_screen.dart';
+import '../../presentation/screens/level_select_screen.dart';
+import '../screens/debug_menu_screen.dart';
 
 /// Centralized route configuration for the entire app
 ///
@@ -122,7 +124,13 @@ class AppRoutes {
 
       case levelSelect:
         return _buildRoute(
-          _buildComingSoonScreen('Level Select'),
+          const LevelSelectScreen(),
+          settings: settings,
+        );
+
+      case debug:
+        return _buildRoute(
+          const DebugMenuScreen(),
           settings: settings,
         );
 
