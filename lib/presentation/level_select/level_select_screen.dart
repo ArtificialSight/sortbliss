@@ -14,6 +14,14 @@ class LevelSelectScreen extends StatelessWidget {
         title: const Text('Select Level'),
         backgroundColor: const Color(0xFF0F172A),
         actions: [
+          // Leaderboards Access
+          IconButton(
+            icon: const Icon(Icons.leaderboard, size: 22),
+            tooltip: 'Leaderboards',
+            onPressed: () {
+              Navigator.of(context).pushNamed('/leaderboards');
+            },
+          ),
           // Investor Dashboard Access (hidden in plain sight)
           IconButton(
             icon: const Icon(Icons.analytics, size: 20),

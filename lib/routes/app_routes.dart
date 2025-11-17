@@ -10,6 +10,7 @@ import '../presentation/storefront/storefront_screen.dart';
 import '../presentation/investor_dashboard/investor_kpi_dashboard.dart';
 import '../presentation/sort_pass/sort_pass_screen.dart';
 import '../presentation/onboarding/onboarding_flow.dart';
+import '../presentation/leaderboards/leaderboards_screen.dart';
 
 class AppRoutes {
   // TODO: Add your routes here
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String investorDashboard = '/investor-dashboard';
   static const String sortPass = '/sort-pass';
   static const String onboarding = '/onboarding';
+  static const String leaderboards = '/leaderboards';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
@@ -69,6 +71,7 @@ class AppRoutes {
     storefront: (context) => const StorefrontScreen(),
     investorDashboard: (context) => const InvestorKPIDashboard(),
     sortPass: (context) => const SortPassScreen(),
+    leaderboards: (context) => const LeaderboardsScreen(),
     onboarding: (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Function) {
