@@ -43,11 +43,9 @@
         <true/>
         <key>UIApplicationSupportsIndirectInputEvents</key>
         <true/>
-        <key>NSCameraUsageDescription</key>
-        <string>This app uses the camera to detect gestures that help you play the game.</string>
-        <key>NSMicrophoneUsageDescription</key>
-        <string>The microphone is used for voice commands so you can control the game hands-free.</string>
         <key>NSSystemVibrationsUsageDescription</key>
         <string>Vibration feedback is used to confirm important in-game actions.</string>
+        <!-- Camera and microphone permissions removed - features not prominently showcased -->
+        <!-- Can be re-added in future version when features are core to gameplay -->
 </dict>
 </plist>

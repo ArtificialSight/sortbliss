@@ -12,11 +12,34 @@ import 'core/premium_audio_manager.dart';
 import 'core/services/achievements_tracker_service.dart';
 import 'core/services/player_profile_service.dart';
 import 'core/services/user_settings_service.dart';
+import 'core/services/rate_app_service.dart';
+import 'core/services/daily_rewards_service.dart';
+import 'core/services/asset_preloader.dart';
+import 'core/monetization/monetization_manager.dart';
+import 'core/monetization/ad_manager.dart';
+import 'core/telemetry/telemetry_manager.dart';
+import 'core/network/connectivity_manager.dart';
+import 'core/error_handling/error_boundary.dart';
 import 'widgets/custom_error_widget.dart';
 
 Future<void> main() async {
+  // Run app with error handling zone
+  runAppWithErrorHandling(
+    ErrorBoundary(
+      child: const SortBlissApp(),
+      onError: (FlutterErrorDetails details) {
+        // Errors are automatically logged by ErrorBoundary
+        debugPrint('Error caught by boundary: ${details.exception}');
+      },
+    ),
+  );
+}
+
+/// Initialize all app services before running the app
+Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Custom error handling
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
   };
@@ -28,35 +51,143 @@ Future<void> main() async {
     );
   };
 
+  // Load environment configuration
   await Environment.bootstrap();
 
+  // Initialize core services
   await Future.wait<void>([
     AchievementsTrackerService.instance.ensureInitialized(),
     PlayerProfileService.instance.ensureInitialized(),
     UserSettingsService.instance.ensureInitialized(),
   ]);
 
+  // Initialize media services
   await Future.wait<void>([
     AudioManager().initialize(),
     PremiumAudioManager().initialize(),
     HapticManager().initialize(),
   ]);
 
+  // Initialize monetization services
+  await Future.wait<void>([
+    MonetizationManager.instance.initialize(),
+    AdManager.instance.initialize(),
+  ]);
+
+  // Initialize telemetry and monitoring
+  await TelemetryManager.instance.initialize();
+
+  // Initialize network monitoring
+  await ConnectivityManager.instance.initialize();
+
+  // Initialize retention services
+  await RateAppService.instance.initialize();
+  await DailyRewardsService.instance.initialize();
+
   // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-  runApp(const SortBlissApp());
 }
 
-class SortBlissApp extends StatelessWidget {
+class SortBlissApp extends StatefulWidget {
   const SortBlissApp({super.key});
 
   @override
+  State<SortBlissApp> createState() => _SortBlissAppState();
+}
+
+class _SortBlissAppState extends State<SortBlissApp> {
+  bool _initialized = false;
+  String? _initError;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeServices();
+  }
+
+  Future<void> _initializeServices() async {
+    try {
+      await initializeApp();
+      if (mounted) {
+        setState(() {
+          _initialized = true;
+        });
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Failed to initialize app: $e');
+      debugPrint('Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _initError = e.toString();
+          _initialized = true; // Show error screen instead of loading forever
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (!_initialized) {
+      return MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 24),
+                Text('Loading SortBliss...', style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_initError != null) {
+      return MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Failed to start SortBliss',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _initError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _initialized = false;
+                        _initError = null;
+                      });
+                      _initializeServices();
+                    },
+                    child: const Text('Try Again'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Sizer(
       builder: (context, orientation, screenType) {
         return MaterialApp(
-          title: 'sortbliss',
+          title: 'SortBliss',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeMode.light,
