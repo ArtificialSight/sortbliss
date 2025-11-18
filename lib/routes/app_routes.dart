@@ -7,6 +7,11 @@ import '../presentation/main_menu/main_menu.dart';
 import '../presentation/settings/settings_screen.dart';
 import '../presentation/splash_screen/splash_screen.dart';
 import '../presentation/storefront/storefront_screen.dart';
+import '../presentation/investor_dashboard/investor_kpi_dashboard.dart';
+import '../presentation/sort_pass/sort_pass_screen.dart';
+import '../presentation/onboarding/onboarding_flow.dart';
+import '../presentation/leaderboards/leaderboards_screen.dart';
+import '../presentation/power_ups/power_ups_store_screen.dart';
 
 class AppRoutes {
   // TODO: Add your routes here
@@ -19,6 +24,11 @@ class AppRoutes {
   static const String achievements = '/achievements';
   static const String settings = '/settings';
   static const String storefront = '/storefront';
+  static const String investorDashboard = '/investor-dashboard';
+  static const String sortPass = '/sort-pass';
+  static const String onboarding = '/onboarding';
+  static const String leaderboards = '/leaderboards';
+  static const String powerUps = '/power-ups';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const SplashScreen(),
@@ -61,6 +71,19 @@ class AppRoutes {
     },
     settings: (context) => const SettingsScreen(),
     storefront: (context) => const StorefrontScreen(),
+    investorDashboard: (context) => const InvestorKPIDashboard(),
+    sortPass: (context) => const SortPassScreen(),
+    leaderboards: (context) => const LeaderboardsScreen(),
+    powerUps: (context) => const PowerUpsStoreScreen(),
+    onboarding: (context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Function) {
+        return OnboardingFlow(onComplete: args);
+      }
+      return OnboardingFlow(onComplete: () {
+        Navigator.of(context).pushReplacementNamed('/main-menu');
+      });
+    },
     dailyChallenge: (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is DailyChallengeScreenArgs) {
