@@ -433,10 +433,29 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           '/powerups',
         ),
         _buildFeatureCard(
+          'Invite Friends',
+          Icons.card_giftcard_rounded,
+          Colors.pink,
+          '/referral',
+          badge: '100 💰',
+        ),
+        _buildFeatureCard(
           'Profile',
           Icons.person,
           Colors.indigo,
           '/profile',
+        ),
+        _buildFeatureCard(
+          'Daily Rewards',
+          Icons.calendar_today,
+          Colors.teal,
+          '/daily-rewards',
+        ),
+        _buildFeatureCard(
+          'Settings',
+          Icons.settings,
+          Colors.grey,
+          '/settings',
         ),
       ],
     );
@@ -446,41 +465,76 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     String label,
     IconData icon,
     Color color,
-    String route,
-  ) {
+    String route, {
+    String? badge,
+  }) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).pushNamed(route);
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(3.w),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 8.w),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(3.w),
+              border: Border.all(color: color.withOpacity(0.3)),
             ),
-            SizedBox(height: 2.h),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
-              ),
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 8.w),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (badge != null)
+            Positioned(
+              top: -8,
+              right: -8,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 0.5.h),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.amber.shade400, Colors.orange.shade600],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withOpacity(0.5),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  badge,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
